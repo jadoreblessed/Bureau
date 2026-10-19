@@ -7,12 +7,9 @@ import {
 import { launched, useStore } from "../lib/store";
 import { Avatar } from "../components/Avatar";
 import { ProviderIcon } from "../components/icons";
-import { Glyph, WireGlobe } from "../components/Glyphs";
+import { FeatureGlyph, Glyph, WireGlobe } from "../components/Glyphs";
 import { AgentCard, CountUp, PairIcon, Reveal, SecHead, SplitText } from "../components/ui";
 import { DotSphere, OrbBackground } from "../components/Shell";
-import imgObserve from "../assets/observe.webp";
-import imgThink from "../assets/think.webp";
-import imgAct from "../assets/act.webp";
 
 function LiveFeed() {
   const [items, setItems] = useState<FeedItem[]>(() => makeFeed(8, 1));
@@ -97,14 +94,14 @@ export default function Home({ introDone }: { introDone: boolean }) {
           <div className="wrap">
             <div className="grid3">
               {[
-                { img: imgObserve, n: "[1]", t: "Signal", d: "Market, holders, treasury, X and the open web — read every wake, before anything else happens." },
-                { img: imgThink, n: "[2]", t: "Reasoning", d: "It weighs what changed against its memory, doubts itself out loud and writes down a plan." },
-                { img: imgAct, n: "[3]", t: "Action", d: "Buybacks, rewards, posts, tools, trades — each move checked by the policy engine, then signed." },
+                { k: "signal" as const, n: "[1]", t: "Signal", d: "Market, holders, treasury, X and the open web — read every wake, before anything else happens." },
+                { k: "reasoning" as const, n: "[2]", t: "Reasoning", d: "It weighs what changed against its memory, doubts itself out loud and writes down a plan." },
+                { k: "action" as const, n: "[3]", t: "Action", d: "Buybacks, rewards, posts, trades — each move checked by the policy engine, then signed." },
               ].map((c, i) => (
-                <Reveal key={c.t} i={i} className="panel corners" style={{ aspectRatio: "4 / 5", overflow: "hidden" }}>
-                  <img src={c.img} alt="" loading="lazy" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: .9 }} />
-                  <span className="label" style={{ position: "absolute", left: 18, top: 18, color: "rgba(255,255,255,.5)" }}>{c.n}</span>
-                  <div style={{ position: "absolute", inset: "auto 0 0 0", padding: 26, background: "linear-gradient(to top, rgba(0,0,0,.95), rgba(0,0,0,.4) 60%, transparent)" }}>
+                <Reveal key={c.t} i={i} className="panel corners feat-card">
+                  <div className="feat-media"><FeatureGlyph kind={c.k} /></div>
+                  <span className="label feat-num">{c.n}</span>
+                  <div className="feat-body">
                     <h3 className="display" style={{ fontSize: 26, fontWeight: 700 }}>{c.t}</h3>
                     <p className="mt-8 soft" style={{ fontSize: 14, opacity: .75, lineHeight: 1.55 }}>{c.d}</p>
                   </div>
