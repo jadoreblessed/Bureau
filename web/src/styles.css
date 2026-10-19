@@ -690,14 +690,29 @@ img.pi { border-radius: 50%; object-fit: cover; background: #111; flex: none; }
 
 .globe { display: inline-block; width: .7em; height: .7em; flex: none; margin-right: .04em; }
 
-/* home feature cards (Signal / Reasoning / Action) */
-.feat-card { position: relative; aspect-ratio: 4 / 5; overflow: hidden; display: flex; flex-direction: column; background: radial-gradient(120% 80% at 50% 28%, rgba(61,123,255,.09), rgba(0,0,0,0) 60%), #05070d; }
-.feat-card::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px); background-size: 14px 14px; -webkit-mask-image: radial-gradient(120% 70% at 50% 30%, #000 30%, transparent 75%); mask-image: radial-gradient(120% 70% at 50% 30%, #000 30%, transparent 75%); pointer-events: none; }
-.feat-media { position: relative; flex: 1; display: grid; place-items: center; padding: 30px 22px 0; min-height: 0; }
-.feat-media .feature-glyph { width: 100%; max-width: 280px; color: var(--blue-2); filter: drop-shadow(0 0 10px rgba(61,123,255,.55)); }
-.feat-media .feature-glyph svg { width: 100%; height: auto; overflow: visible; }
-.feat-num { position: absolute; left: 18px; top: 18px; z-index: 2; color: rgba(255,255,255,.5); }
-.feat-body { position: relative; z-index: 2; padding: 0 26px 26px; }
+/* home · signal path (Signal / Reasoning / Action as one instrument) */
+.trace-lead { max-width: 640px; margin-bottom: 26px; }
+.trace-lead h2 { font-size: clamp(27px, 4.4vw, 48px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.02; }
+.trace-lead p { margin-top: 12px; font-size: clamp(15px, 1.5vw, 17px); line-height: 1.55; color: var(--soft); opacity: .82; }
+
+.trace { overflow: hidden; background: #040507; display: flex; flex-direction: column; }
+.trace-stab { display: flex; justify-content: space-between; padding: 16px 26px 0; font-family: var(--f-mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); pointer-events: none; }
+.trace-canvas-wrap { position: relative; width: 100%; height: clamp(190px, 26vw, 300px); }
+.trace-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.trace-stages { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
+.trace-stage { padding: 22px 26px 26px; min-width: 0; }
+.trace-stage + .trace-stage { border-left: 1px solid var(--line); }
+.trace-word { font-size: clamp(21px, 2.3vw, 30px); font-weight: 700; letter-spacing: -0.02em; }
+.trace-desc { margin-top: 10px; font-size: 13.5px; line-height: 1.55; color: var(--soft); opacity: .78; max-width: 34ch; }
+.trace-cap { display: block; margin-top: 14px; color: var(--blue-2); opacity: .9; }
+
+@media (max-width: 720px) {
+  .trace-canvas-wrap { height: 150px; }
+  .trace-stages { grid-template-columns: 1fr; }
+  .trace-stage + .trace-stage { border-left: 0; border-top: 1px solid var(--line); }
+  .trace-desc { max-width: none; }
+}
 .g-doubt { opacity: .3; animation: gDoubt 4s ease-in-out infinite; }
 @keyframes gDoubt { 0%, 40% { opacity: .3; } 55%, 100% { opacity: .08; } }
 .g-block { animation: gBlock 3.4s ease-in-out infinite; }

@@ -7,7 +7,8 @@ import {
 import { launched, useStore } from "../lib/store";
 import { Avatar } from "../components/Avatar";
 import { ProviderIcon } from "../components/icons";
-import { FeatureGlyph, Glyph, WireGlobe } from "../components/Glyphs";
+import { Glyph, WireGlobe } from "../components/Glyphs";
+import { SignalPath } from "../components/SignalPath";
 import { AgentCard, CountUp, PairIcon, Reveal, SecHead, SplitText } from "../components/ui";
 import { DotSphere, OrbBackground } from "../components/Shell";
 
@@ -89,25 +90,14 @@ export default function Home({ introDone }: { introDone: boolean }) {
           </div>
         </section>
 
-        {/* Vexon card trio */}
+        {/* How the agent thinks — one living signal path */}
         <section className="sec">
           <div className="wrap">
-            <div className="grid3">
-              {[
-                { k: "signal" as const, n: "[1]", t: "Signal", d: "Market, holders, treasury, X and the open web — read every wake, before anything else happens." },
-                { k: "reasoning" as const, n: "[2]", t: "Reasoning", d: "It weighs what changed against its memory, doubts itself out loud and writes down a plan." },
-                { k: "action" as const, n: "[3]", t: "Action", d: "Buybacks, rewards, posts, trades — each move checked by the policy engine, then signed." },
-              ].map((c, i) => (
-                <Reveal key={c.t} i={i} className="panel corners feat-card">
-                  <div className="feat-media"><FeatureGlyph kind={c.k} /></div>
-                  <span className="label feat-num">{c.n}</span>
-                  <div className="feat-body">
-                    <h3 className="display" style={{ fontSize: 26, fontWeight: 700 }}>{c.t}</h3>
-                    <p className="mt-8 soft" style={{ fontSize: 14, opacity: .75, lineHeight: 1.55 }}>{c.d}</p>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
+            <Reveal className="trace-lead">
+              <h2 className="display">One mind, working in the open.</h2>
+              <p className="soft">It senses, it reasons, it acts — and shows its work at every step.</p>
+            </Reveal>
+            <Reveal i={1}><SignalPath /></Reveal>
           </div>
         </section>
 
