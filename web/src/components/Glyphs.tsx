@@ -206,3 +206,91 @@ export function WireGlobe({ className = "" }: { className?: string }) {
   }, []);
   return <canvas ref={ref} className={`globe ${className}`} aria-hidden="true" />;
 }
+
+/* ------------------------------------------------------------------ feature scenes
+   The three big home cards. Larger, more detailed line scenes in the same
+   ice-blue wire language, each one specific to what it describes. */
+
+export type FeatureKind = "signal" | "reasoning" | "action";
+
+const FEATURE: Record<FeatureKind, () => ReactNode> = {
+  // Signal — a radar reading many sources every wake.
+  signal: () => (
+    <svg viewBox="0 0 220 150" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      {/* feeds from four sources into the centre */}
+      {([[26, 26], [194, 26], [22, 126], [198, 122]] as const).map(([x, y], i) => (
+        <g key={i}>
+          <path d={`M${x} ${y} L110 75`} opacity=".3" />
+          <rect x={x - 7} y={y - 6} width="14" height="12" rx="2" opacity=".8" />
+          <path d={`M${x - 3} ${y - 1}h6M${x - 3} ${y + 2}h4`} opacity=".5" strokeWidth="1" />
+          <circle r="2.1" fill="currentColor" stroke="none">
+            <animateMotion dur="2.6s" repeatCount="indefinite" begin={`${i * 0.5}s`} path={`M${x} ${y} L110 75`} />
+            <animate attributeName="opacity" dur="2.6s" repeatCount="indefinite" begin={`${i * 0.5}s`} values="0;1;1;0" keyTimes="0;0.1;0.8;1" />
+          </circle>
+        </g>
+      ))}
+      {/* radar rings + sweep */}
+      <circle cx="110" cy="75" r="46" opacity=".3" />
+      <circle cx="110" cy="75" r="30" opacity=".45" />
+      <circle cx="110" cy="75" r="15" opacity=".6" />
+      <g className="g-spin" style={{ transformOrigin: "110px 75px" }}>
+        <path d="M110 75 L110 29" />
+        <path d="M110 75 L110 29 A46 46 0 0 1 143 44 Z" fill="currentColor" stroke="none" opacity=".16" />
+      </g>
+      <circle cx="110" cy="75" r="4" fill="currentColor" stroke="none" className="g-pulse" />
+    </svg>
+  ),
+
+  // Reasoning — a graph of thoughts with one path lit, one branch doubted.
+  reasoning: () => (
+    <svg viewBox="0 0 220 150" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      {(() => {
+        const n: Record<string, [number, number]> = {
+          a: [24, 75], b: [66, 40], c: [66, 110], d: [110, 62], e: [110, 104], f: [154, 44], g: [154, 96], h: [196, 72],
+        };
+        const edges: [string, string][] = [["a", "b"], ["a", "c"], ["b", "d"], ["c", "e"], ["c", "d"], ["d", "f"], ["e", "g"], ["d", "g"], ["f", "h"], ["g", "h"]];
+        const path = ["a", "b", "d", "g", "h"]; // the chosen line of reasoning
+        const d = path.map((k, i) => `${i ? "L" : "M"}${n[k]![0]} ${n[k]![1]}`).join(" ");
+        return (
+          <>
+            {edges.map(([p, q], i) => (<path key={i} d={`M${n[p]![0]} ${n[p]![1]} L${n[q]![0]} ${n[q]![1]}`} opacity=".25" />))}
+            {/* a discarded branch, fading */}
+            <path d={`M${n.d![0]} ${n.d![1]} L${n.f![0]} ${n.f![1]}`} className="g-doubt" strokeDasharray="3 4" />
+            <path d={d} className="g-trace" strokeWidth="1.9" />
+            {Object.entries(n).map(([k, [x, y]], i) => (
+              <circle key={k} cx={x} cy={y} r={path.includes(k) ? 3.4 : 2.6} fill="currentColor" stroke="none"
+                className="g-pulse" style={{ animationDelay: `${(i * 0.3) % 2}s`, opacity: path.includes(k) ? 1 : 0.4 }} />
+            ))}
+          </>
+        );
+      })()}
+    </svg>
+  ),
+
+  // Action — intent → policy gate → signer → chain. The backend, drawn.
+  action: () => (
+    <svg viewBox="0 0 220 150" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 75 H206" opacity=".25" />
+      {/* intent */}
+      <circle cx="26" cy="75" r="9" opacity=".8" /><path d="M26 71v8M22 75h8" strokeWidth="1" opacity=".7" />
+      {/* policy gate */}
+      <path d="M86 52 h-12 v46 h12 M104 52 h12 v46 h-12" opacity=".7" />
+      <path d="M89 75l6 6 11-12" className="g-draw" strokeWidth="2" />
+      {/* signer (key) */}
+      <circle cx="150" cy="75" r="8" /><path d="M158 75h14v6M166 75v5" strokeWidth="1.3" />
+      {/* chain blocks */}
+      <rect x="182" y="58" width="13" height="13" rx="2" opacity=".5" />
+      <rect x="182" y="79" width="13" height="13" rx="2" opacity=".5" />
+      <rect x="198" y="68" width="13" height="13" rx="2" className="g-block" />
+      {/* the move travelling the pipeline */}
+      <circle r="3" fill="currentColor" stroke="none" className="g-move-glow">
+        <animateMotion dur="3.4s" repeatCount="indefinite" path="M26 75 H95 H150 H204" keyPoints="0;0.33;0.66;1" keyTimes="0;0.4;0.7;1" calcMode="linear" />
+        <animate attributeName="opacity" dur="3.4s" repeatCount="indefinite" values="0;1;1;1;0" keyTimes="0;0.08;0.7;0.92;1" />
+      </circle>
+    </svg>
+  ),
+};
+
+export function FeatureGlyph({ kind, className = "" }: { kind: FeatureKind; className?: string }) {
+  return <div className={`feature-glyph ${className}`} aria-hidden="true">{FEATURE[kind]()}</div>;
+}
