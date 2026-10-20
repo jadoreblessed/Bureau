@@ -149,6 +149,38 @@ sleeps). Flip the switches on last.
 
 ---
 
+## Part 4 — Self-host on your own server (one command)
+
+For a fresh Debian/Ubuntu root box (e.g. the `blxssed` server), `deploy/server-setup.sh`
+does the whole thing: installs Docker + nginx, builds the frontend, generates the
+backend secrets, brings up the backend with docker compose, and wires nginx with
+the **hostpanel log format** (per-site stats in the panel).
+
+```bash
+# on the server, as root — review the script first
+curl -fsSL https://raw.githubusercontent.com/jadoreblessed/bureau/main/deploy/server-setup.sh -o setup.sh
+# edit the CONFIG block at the top (at least DOMAIN); optionally export OPENROUTER_API_KEY
+DOMAIN=bureau.example.com bash setup.sh
+```
+
+It leaves every money switch **off** and runs on **devnet**, so nothing moves
+funds. When it finishes:
+
+- fund the payer wallet with devnet SOL (its pubkey is printed, and in
+  `server/SECRETS.txt`),
+- add `OPENROUTER_API_KEY` to `server/.env` so agents can think, then
+  `cd /opt/bureau/server && docker compose up -d`,
+- **back up `MASTER_KEY` off-server, then delete `server/SECRETS.txt`**,
+- for HTTPS: `certbot --nginx -d <domain>`.
+
+It does **not** touch `/etc/ssh/hostpanel/`, `00-hostpanel.conf` or the
+`hostpanel-agent` service. nginx access logs stay at `/var/log/nginx/access.log`
+in the `hostpanel` format, so the panel picks up per-site traffic automatically.
+`deploy/nginx-bureau.conf` is the standalone site config if you'd rather wire it
+by hand.
+
+---
+
 ## Notes
 
 - **One process vs three.** `render.yaml` runs the API, worker and signer in a
