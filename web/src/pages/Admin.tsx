@@ -63,7 +63,7 @@ export default function Admin() {
   return (
     <main className="page">
       <div className="wrap page-top" style={{ maxWidth: 560 }}>
-        <a href="/" className="row-wrap" style={{ gap: 10, alignItems: "center", marginBottom: 28 }}><Mark className="ic" /><span className="label">BUREAU · admin</span></a>
+        <a href="/" className="row-wrap" style={{ gap: 10, alignItems: "center", marginBottom: 28 }}><Mark width={22} height={22} /><span className="label">BUREAU · admin</span></a>
         <h1 className="h-page" style={{ fontSize: "clamp(36px, 6vw, 56px)" }}>Site settings</h1>
 
         {!authed ? (
