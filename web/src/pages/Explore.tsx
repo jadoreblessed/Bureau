@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { go, Link, setQuery, useRoute } from "../lib/router";
-import { CLASSIC, CLASSIC_TOTAL, KINDS, MODELS, PAIRS, PROVIDERS, fmtNum, fmtUsd, kindById, modelByName, type Agent, type KindId } from "../lib/data";
+import { KINDS, MODELS, PAIRS, PROVIDERS, fmtNum, fmtUsd, kindById, modelByName, type Agent, type KindId } from "../lib/data";
 import { useAllAgents } from "../lib/store";
 import { Avatar } from "../components/Avatar";
 import { Grid, Rows, Search } from "../components/icons";
@@ -26,7 +26,7 @@ export default function Explore() {
   const view = query.get("view") ?? "grid";
   const q = (query.get("q") ?? "").toLowerCase();
 
-  const source = tab === "classic" ? CLASSIC : tab === "mine" ? all.filter((a) => a.mine) : all;
+  const source = tab === "mine" ? all.filter((a) => a.mine) : all;
   const list = useMemo(() => {
     let l = source.filter((a) =>
       (kind === "all" || a.kind === kind) &&
@@ -51,7 +51,6 @@ export default function Explore() {
         <Reveal i={2} className="between mt-24" style={{ flexWrap: "wrap" }}>
           <div className="pill-tabs" role="tablist">
             <button className={tab === "agents" ? "on" : ""} onClick={() => setQuery({ tab: undefined })}>Agents · {all.length}</button>
-            <button className={tab === "classic" ? "on" : ""} onClick={() => setQuery({ tab: "classic" })}>Classic · {fmtNum(CLASSIC_TOTAL)}</button>
             <button className={tab === "mine" ? "on" : ""} onClick={() => setQuery({ tab: "mine" })}>Launched by me · {mineCount}</button>
           </div>
           <Link to="/launch" className="btn btn-solid btn-sm">Launch an agent</Link>

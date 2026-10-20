@@ -65,7 +65,8 @@ export const StatusBadge = ({ s }: { s: Agent["status"] }) => (
   <span className={`status ${statusClass(s)}`}><i />{STATUS_LABEL[s]}</span>
 );
 export const statusNote = (a: Agent) =>
-  a.status === "awake" ? `next thought in ${a.nextThought} min`
+  !a.ca && !a.mine ? "not launched yet — no coin, no contract address"
+  : a.status === "awake" ? (a.nextThought ? `next thought in ${a.nextThought} min` : "awake")
   : a.status === "asleep-fees" ? "asleep until its coin earns its first fees"
   : a.status === "asleep-floor" ? "asleep under its $6K market-cap floor"
   : a.status === "paused" ? "paused by its dev"
@@ -96,8 +97,8 @@ export function AgentCard({ a, i }: { a: Agent; i: number }) {
           <span className="chip"><PairIcon sym={a.pair} size={13} />{a.pair}</span>
         </div>
         <div className="kv">
-          <div><div className="label">Mcap</div><div className="v">{fmtUsd(a.mcap)}</div></div>
-          <div><div className="label">Fees</div><div className="v">{fmtUsd(a.fees)}</div></div>
+          <div><div className="label">Mcap</div><div className="v">{a.ca || a.mine ? fmtUsd(a.mcap) : "—"}</div></div>
+          <div><div className="label">Fees</div><div className="v">{a.ca || a.mine ? fmtUsd(a.fees) : "—"}</div></div>
           <div><div className="label">Age</div><div className="v">{a.ageLabel ?? a.ageDays + "d"}</div></div>
         </div>
         <div className={`note ${a.status === "awake" ? "on" : ""}`}><i />{statusNote(a)}</div>

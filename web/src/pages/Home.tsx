@@ -1,11 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link, go } from "../lib/router";
 import {
-  AGENTS, BURNS, BURN_TOTALS, CLASSIC, CLASSIC_TOTAL, ECONOMICS, FAMILIES, KINDS, LOOP, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS,
-  TOTALS, ago, fmtNum, fmtUsd, makeFeed, type FeedItem,
+  AGENTS, ECONOMICS, FAMILIES, KINDS, LOOP, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, ago,
 } from "../lib/data";
 import { launched, useStore } from "../lib/store";
-import { useLiveAgents } from "../lib/api";
+import { useFeed, useLiveAgents, useStats, type Stats } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { ProviderIcon } from "../components/icons";
 import { Glyph, WireGlobe } from "../components/Glyphs";
@@ -13,26 +11,19 @@ import { SignalPath } from "../components/SignalPath";
 import { AgentCard, CountUp, PairIcon, Reveal, SecHead, SplitText } from "../components/ui";
 import { DotSphere, OrbBackground } from "../components/Shell";
 
-function LiveFeed() {
-  const [items, setItems] = useState<FeedItem[]>(() => makeFeed(8, 1));
-  useEffect(() => {
-    let salt = 2;
-    const iv = setInterval(() => {
-      if (document.hidden) return;
-      const next = makeFeed(1, salt++)[0];
-      setItems((l) => [{ ...next, id: "n" + salt, min: 0 }, ...l.map((x) => ({ ...x, min: x.min + 0.1 }))].slice(0, 8));
-    }, 6500);
-    return () => clearInterval(iv);
-  }, []);
+function LiveFeed({ stats }: { stats: Stats | null }) {
+  // Real thoughts from the agents, newest first (refreshed by the hook).
+  const items = (useFeed() ?? []).slice(0, 8);
   return (
     <div className="feed panel corners">
       <div className="feed-h">
         <span className="live-dot" />
         <span className="t" style={{ color: "var(--blue-2)" }}>Live</span>
         <span className="t">Agents, right now</span>
-        <span className="label" style={{ marginLeft: "auto" }}>{TOTALS.awake} awake</span>
+        <span className="label" style={{ marginLeft: "auto" }}>{stats ? `${stats.awake} awake` : ""}</span>
       </div>
       <div className="feed-list">
+        {!items.length && <p className="muted" style={{ padding: "18px", fontSize: 14 }}>Quiet for now. Thoughts appear here as agents wake.</p>}
         {items.map((f) => (
           <Link to={`/agent/${f.agent.id}`} key={f.id} className="fi">
             <Avatar seed={f.agent.seed} image={f.agent.image} className="ava-38" dots={90} />
@@ -51,6 +42,7 @@ function LiveFeed() {
 export default function Home({ introDone }: { introDone: boolean }) {
   const mine = useStore(launched);
   const live = useLiveAgents(10);
+  const stats = useStats();
   const top = [...mine, ...(live ?? AGENTS)].slice(0, 10);
   const kindCount = (id: string) => [...mine, ...AGENTS].filter((a) => a.kind === id).length;
 
@@ -77,18 +69,18 @@ export default function Home({ introDone }: { introDone: boolean }) {
                   </Reveal>
                   <Reveal i={5} className="hero-cta">
                     <Link to="/launch" className="btn btn-solid btn-lg">Launch an agent</Link>
-                    <Link to="/agents" className="btn btn-lg">Explore {TOTALS.agents + mine.length} agents</Link>
+                    <Link to="/agents" className="btn btn-lg">Explore agents</Link>
                   </Reveal>
                   <Reveal i={6} className="stats4">
-                    <div><div className="label">Agents</div><div className="v"><CountUp to={TOTALS.agents + mine.length} /></div></div>
-                    <div><div className="label">Awake now</div><div className="v" style={{ color: "var(--blue-2)" }}>{TOTALS.awake}</div></div>
-                    <div><div className="label">Pair assets</div><div className="v"><CountUp to={TOTALS.pairs} /></div></div>
-                    <div><div className="label">Fees earned</div><div className="v"><CountUp to={TOTALS.fees} format={(n) => fmtUsd(n, true)} /></div></div>
+                    <div><div className="label">Agents</div><div className="v">{stats ? <CountUp to={stats.agents + mine.length} /> : "—"}</div></div>
+                    <div><div className="label">Awake now</div><div className="v" style={{ color: "var(--blue-2)" }}>{stats ? stats.awake : "—"}</div></div>
+                    <div><div className="label">Live coins</div><div className="v">{stats ? <CountUp to={stats.liveCoins} /> : "—"}</div></div>
+                    <div><div className="label">Fees earned</div><div className="v">{stats ? `${stats.feesEarnedSol.toFixed(2)} SOL` : "—"}</div></div>
                   </Reveal>
                 </>
               )}
             </div>
-            {introDone && <Reveal i={3}><LiveFeed /></Reveal>}
+            {introDone && <Reveal i={3}><LiveFeed stats={stats} /></Reveal>}
           </div>
         </section>
 
@@ -208,17 +200,6 @@ export default function Home({ introDone }: { introDone: boolean }) {
           </div>
         </section>
 
-        {/* 06 CLASSIC */}
-        <section className="sec">
-          <div className="wrap">
-            <SecHead n="06" eyebrow="The first wave" title="Classic coins"
-              side={<span className="row" style={{ gap: 14, flexWrap: "wrap" }}>{fmtNum(CLASSIC_TOTAL)} coins · 1 agent awake <Link to="/agents?tab=classic" className="lnk" style={{ fontSize: 12 }}>All classic coins</Link></span>} />
-            <div className="cards">
-              {CLASSIC.slice(0, 5).map((a, i) => (<AgentCard key={a.id} a={a} i={i} />))}
-            </div>
-          </div>
-        </section>
-
         {/* ECONOMICS + MODELS */}
         <section className="sec">
           <div className="wrap">
@@ -247,23 +228,7 @@ export default function Home({ introDone }: { introDone: boolean }) {
             <Reveal className="panel panel-p mt-16">
               <div className="label">$BUREAU · Buyback &amp; burn</div>
               <h3 className="display mt-12" style={{ fontSize: 30, fontWeight: 700 }}>Every agent buys back $BUREAU</h3>
-              <div className="statrow mt-20">
-                <div><div className="label">$BUREAU burned</div><div className="v"><CountUp to={BURN_TOTALS.burned} /></div></div>
-                <div><div className="label">SOL spent</div><div className="v"><CountUp to={BURN_TOTALS.sol} format={(n) => n.toFixed(2)} /></div></div>
-                <div><div className="label">Buybacks</div><div className="v"><CountUp to={BURN_TOTALS.buybacks} /></div></div>
-                <div><div className="label">Next buy</div><div className="v">{BURN_TOTALS.next} SOL</div></div>
-              </div>
-              <p className="muted mt-16" style={{ fontSize: 13.5 }}>5% of every agent's creator fees buys $BUREAU once an hour, and every token bought is burned. Last buy {ago(BURNS[0].min)}.</p>
-              <div className="mt-8">
-                {BURNS.map((b, i) => (
-                  <div className="tx-row" key={i}>
-                    <span className="t">{ago(b.min)}</span>
-                    <b style={{ fontWeight: 600 }}>{fmtNum(b.amount)} burned</b>
-                    <span className="s">{b.sol} SOL</span>
-                    <a className="lnk" style={{ fontSize: 12 }} href="https://solscan.io" target="_blank" rel="noreferrer">tx</a>
-                  </div>
-                ))}
-              </div>
+              <BurnStats stats={stats} />
             </Reveal>
           </div>
         </section>
@@ -285,6 +250,24 @@ export default function Home({ introDone }: { introDone: boolean }) {
           </div>
         </section>
       </main>
+    </>
+  );
+}
+
+/* Real buyback-and-burn figures; until the first burn there is nothing to show but the rule. */
+function BurnStats({ stats }: { stats: Stats | null }) {
+  const b = stats?.buybackBurn;
+  if (!b || !b.buybacks) {
+    return <p className="muted mt-16" style={{ fontSize: 13.5 }}>5% of every agent's creator fees buys $BUREAU once an hour, and every token bought is burned. Burns start once $BUREAU is live; each one will be listed here with its transaction.</p>;
+  }
+  return (
+    <>
+      <div className="statrow mt-20">
+        <div><div className="label">$BUREAU burned</div><div className="v"><CountUp to={b.burned} /></div></div>
+        <div><div className="label">SOL spent</div><div className="v"><CountUp to={b.solSpent} format={(n) => n.toFixed(2)} /></div></div>
+        <div><div className="label">Buybacks</div><div className="v"><CountUp to={b.buybacks} /></div></div>
+      </div>
+      <p className="muted mt-16" style={{ fontSize: 13.5 }}>5% of every agent's creator fees buys $BUREAU once an hour, and every token bought is burned.</p>
     </>
   );
 }

@@ -8,10 +8,11 @@ import { lamportsToSol } from "../util/money.js";
 export async function statsRoutes(app: FastifyInstance) {
   app.get("/stats", async (_req, reply) => {
     try {
-      const [agents, burn, pairs] = await Promise.all([
-        one<{ total: string; awake: string; fees: string }>(
+      const [agents, burn, pairs, sol] = await Promise.all([
+        one<{ total: string; awake: string; live: string; fees: string }>(
           `SELECT COUNT(*) AS total,
                   COUNT(*) FILTER (WHERE status = 'awake') AS awake,
+                  COUNT(*) FILTER (WHERE mint IS NOT NULL) AS live,
                   COALESCE(SUM(fees_earned_lamports), 0) AS fees
              FROM agents WHERE status <> 'pending'`,
         ),
@@ -19,11 +20,14 @@ export async function statsRoutes(app: FastifyInstance) {
           `SELECT bureau_burned AS burned, buyback_sol AS sol, buyback_count AS count FROM platform_stats WHERE id`,
         ),
         one<{ n: string }>(`SELECT COUNT(DISTINCT pair_symbol) AS n FROM agents WHERE status <> 'pending'`),
+        one<{ v: string }>(`SELECT value AS v FROM platform_kv WHERE key = 'sol_usd'`),
       ]);
       return {
         agents: Number(agents?.total ?? 0),
         awake: Number(agents?.awake ?? 0),
         pairAssets: Number(pairs?.n ?? 0),
+        liveCoins: Number(agents?.live ?? 0),
+        solUsd: Number(sol?.v ?? 0),
         feesEarnedSol: lamportsToSol(Number(agents?.fees ?? 0)),
         buybackBurn: {
           burned: Number(burn?.burned ?? 0),
@@ -37,6 +41,21 @@ export async function statsRoutes(app: FastifyInstance) {
         },
         cluster: config.SOLANA_CLUSTER,
       };
+    } catch (err) {
+      return send(reply, err);
+    }
+  });
+
+  /** The home page's live feed: the newest thoughts across all agents. */
+  app.get("/feed", async (_req, reply) => {
+    try {
+      const { rows } = await query(
+        `SELECT t.id, t.phase, t.body, t.created_at, a.slug, a.ticker, a.name
+           FROM thoughts t JOIN agents a ON a.id = t.agent_id
+          WHERE a.status NOT IN ('pending', 'failed')
+          ORDER BY t.id DESC LIMIT 20`,
+      );
+      return { items: rows };
     } catch (err) {
       return send(reply, err);
     }
