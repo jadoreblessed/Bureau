@@ -1,31 +1,5 @@
-import img_0 from "../assets/agents/a_agentcapital.webp";
-import img_1 from "../assets/agents/a_aqbczmcjl121.webp";
-import img_2 from "../assets/agents/a_artificialinuflu.webp";
-import img_3 from "../assets/agents/a_markodexthetrenc.webp";
-import img_4 from "../assets/agents/a_monerochan.webp";
-import img_5 from "../assets/agents/a_musejensen.webp";
-import img_6 from "../assets/agents/a_raventhetrader.webp";
-import img_7 from "../assets/agents/a_unbound.webp";
-import img_8 from "../assets/agents/a_ylqdjijcs130.webp";
-import img_9 from "../assets/agents/c_claudia.webp";
-import img_10 from "../assets/agents/c_eve.webp";
-import img_11 from "../assets/agents/c_subagency.webp";
-import img_12 from "../assets/agents/c_terminutter.webp";
-const IMGS: Record<string, string> = {
-  "a_agentcapital": img_0,
-  "a_aqbczmcjl121": img_1,
-  "a_artificialinuflu": img_2,
-  "a_markodexthetrenc": img_3,
-  "a_monerochan": img_4,
-  "a_musejensen": img_5,
-  "a_raventhetrader": img_6,
-  "a_unbound": img_7,
-  "a_ylqdjijcs130": img_8,
-  "c_claudia": img_9,
-  "c_eve": img_10,
-  "c_subagency": img_11,
-  "c_terminutter": img_12,
-};
+// Agents use the procedural particle avatar (see Avatar.tsx); no image assets.
+const IMGS: Record<string, string> = {};
 // BUREAU — content + mock market data. All copy lives here.
 
 export const SITE = {
