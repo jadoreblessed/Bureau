@@ -9,6 +9,7 @@ import { badRequest, conflict, disabled, notFound, send, unauthorized } from "..
 import { createAgentWallet } from "../chain/wallet.js";
 import { ensurePolicy } from "../policy/context.js";
 import { lamportsToSol } from "../util/money.js";
+import { connection } from "../chain/rpc.js";
 
 /**
  * Launching a coin.
@@ -42,6 +43,16 @@ const slugify = (name: string, ticker: string) =>
   `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 28) || "agent"}-${ticker.toLowerCase()}`;
 
 export async function launchRoutes(app: FastifyInstance) {
+  /** A fresh blockhash and the cluster, so the site can build the one transfer a launch needs without a Solana SDK. */
+  app.get("/chain/blockhash", async (_req, reply) => {
+    try {
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+      return { blockhash, lastValidBlockHeight, cluster: config.SOLANA_CLUSTER, launchEnabled: config.LAUNCH_ENABLED };
+    } catch (err) {
+      return send(reply, err);
+    }
+  });
+
   app.post("/launch/quote", async (req, reply) => {
     try {
       const wallet = await walletFor(req);

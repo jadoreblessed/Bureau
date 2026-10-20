@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { go, Link } from "../lib/router";
 import {
-  FAMILIES, KINDS, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, fakeAddress, hash, kindById, pairBySym, short,
+  FAMILIES, KINDS, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, hash, kindById, modelByName, pairBySym, short,
   type Agent, type KindId, type ProviderId,
 } from "../lib/data";
-import { addLaunched, drafts, toast, useStore } from "../lib/store";
-import { signLaunch, useWallet } from "../lib/wallet";
+import { drafts, toast, useStore } from "../lib/store";
+import { apiSignIn, sendSol, useWallet } from "../lib/wallet";
 import { Avatar } from "../components/Avatar";
 import { Check, Phantom, ProviderIcon, Shield, Upload } from "../components/icons";
 import { PairIcon, Reveal } from "../components/ui";
@@ -60,7 +60,8 @@ export default function Launch() {
   const [f, setF] = useState<Form>(EMPTY);
   const [active, setActive] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<Agent | null>(null);
+  // Progress of a real launch: 0 sign-in, 1 transfer, 2 creating, 3 locking fees, 4 live.
+  const [run, setRun] = useState<{ step: number; slug?: string; sol?: number; sig?: string; mint?: string; error?: string } | null>(null);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
   const toggle = (k: "powers" | "programs" | "families", id: string) => setF((s) => ({ ...s, [k]: s[k].includes(id) ? s[k].filter((x) => x !== id) : [...s[k], id] }));
   const seed = useMemo(() => hash((f.name || "untitled") + f.ticker), [f.name, f.ticker]);
@@ -101,32 +102,54 @@ export default function Launch() {
 
   const launch = async () => {
     if (!valid) { toast("Add a name and a 2–10 character ticker", "err"); document.getElementById("step-0")?.scrollIntoView({ behavior: "smooth" }); return; }
+    // Coins are created against SOL only for now; other pairs are not wired on the backend yet.
+    if (f.pair !== "SOL") { toast("Only SOL pairs can launch right now", "err"); return; }
     let addr = w.address;
     if (!addr) { addr = await w.connect(); if (!addr) return; }
     setBusy(true);
-    const ok = await signLaunch(`BUREAU launch\n${f.name} ($${f.ticker.toUpperCase()})\nModel: ${f.model}\nPair: ${f.pair}\nKind: ${f.kind}\nCreator fees → agent wallet (locked)`);
-    if (!ok) { setBusy(false); return; }
-    const s = hash(f.name + f.ticker + Date.now());
-    const k = kindById(f.kind);
-    const agent: Agent = {
-      id: f.ticker.toLowerCase() + "-" + s.toString(36).slice(0, 4),
-      name: f.name.trim(), ticker: f.ticker.toUpperCase(), kind: f.kind,
-      families: f.kind === "custom" ? f.families : k.families, pair: f.pair, model: f.model,
-      status: "asleep-fees", mcap: 3998 + Math.round(f.devBuy * 155), fees: 0, vol1h: Math.round(f.devBuy * 155), holders: f.devBuy > 0 ? 2 : 1,
-      ageDays: 0, bonding: Math.min(99, Math.round(f.devBuy * 2)), nextThought: 10, ca: fakeAddress(s, "brx"), creator: addr,
-      x: f.x ? "@" + f.x.replace(/^@/, "").replace(/^https?:\/\/(x|twitter)\.com\//, "") : undefined, tg: f.tg || undefined,
-      description: f.description || "A new agent, waiting for its first fees.",
-      persona: {
-        role: k.name + " agent", traits: f.traits ? f.traits.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 4) : ["new", "curious"],
-        drive: f.instructions || "Work in public, spend carefully, report every move.", quote: "First fees, first thought.",
-        mission: "Earn its first $20 in fees and wake up.", missionGoal: "fees to wake", missionTarget: 20, missionNow: 0,
-      },
-      seed: s, mine: true, image: f.image || undefined, instructions: f.instructions, createdAt: Date.now(),
-    };
-    await new Promise((r) => setTimeout(r, 700));
-    addLaunched(agent);
-    setBusy(false);
-    setDone(agent);
+    const fail = (msg: string) => { setRun((r) => ({ ...(r ?? { step: 0 }), error: msg })); setBusy(false); };
+    setRun({ step: 0 });
+    try {
+      // 1. sign in: a plain message, no transaction
+      const token = await apiSignIn(addr);
+      if (!token) { setRun(null); setBusy(false); return; }
+      // 2. reserve the agent and its wallet, get the exact amount
+      const k = kindById(f.kind);
+      const q = await fetch("/api/launch/quote", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: f.name.trim(), ticker: f.ticker.toUpperCase(), description: f.description.trim(), kind: f.kind,
+          families: f.kind === "custom" ? f.families : k.families, model: modelByName(f.model).id,
+          instructions: f.instructions.trim(), traits: f.traits.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 6),
+          ...(/^https?:\/\//.test(f.image) ? { imageUrl: f.image } : {}),
+          pair: "SOL", devBuySol: f.devBuy,
+          links: { ...(f.x ? { x: f.x } : {}), ...(f.tg ? { telegram: f.tg } : {}) },
+        }),
+      });
+      const quote = await q.json();
+      if (!q.ok) return fail(quote.message ?? "Could not reserve the launch");
+      if (!quote.launchEnabled) return fail("Launching is switched off on this deployment right now.");
+      setRun({ step: 1, slug: quote.slug, sol: quote.fundingSol });
+      // 3. the one transfer the dev signs: fund the agent's own wallet
+      const sig = await sendSol(addr, quote.fundingAddress, quote.fundingLamports);
+      if (!sig) return fail("Transfer cancelled. Nothing was sent.");
+      await fetch(`/api/launch/${quote.launchId}/funded`, {
+        method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${token}` }, body: JSON.stringify({ signature: sig }),
+      });
+      setRun({ step: 2, slug: quote.slug, sol: quote.fundingSol, sig });
+      // 4. the worker creates the coin and locks the fee split; we watch
+      for (let i = 0; i < 90; i++) {
+        await new Promise((r) => setTimeout(r, 4000));
+        const l = await (await fetch(`/api/launch/${quote.launchId}`)).json();
+        if (l.mint) setRun({ step: l.stage === "verified" ? 4 : 3, slug: quote.slug, sol: quote.fundingSol, sig, mint: l.mint });
+        if (l.stage === "verified") { setBusy(false); return; }
+        if (l.stage === "failed" || l.status === "failed" || l.status === "halted") return fail(l.error ?? "The launch failed on chain.");
+      }
+      fail("Still working on chain. Check its page in a few minutes.");
+    } catch {
+      fail("Network error. If you already sent the transfer, the launch continues on the server.");
+    }
   };
 
   const pairsShown = PAIRS;
@@ -338,15 +361,23 @@ export default function Launch() {
         </aside>
       </div>
 
-      {done && (
-        <div className="modal-bg" onClick={() => setDone(null)}>
+      {run && (
+        <div className="modal-bg" onClick={() => !busy && setRun(null)}>
           <div className="modal corners" style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
-            <div className="row"><span className="live-dot" /><span className="tag blue">Agent filed</span></div>
-            <h3 className="display mt-16" style={{ fontSize: 28, fontWeight: 700 }}>{done.name} is in the registry</h3>
-            <p className="muted mt-8" style={{ fontSize: 14 }}>${done.ticker} now shows in Agents and under “Launched by me”. It sleeps until its coin earns its first $20 in fees.</p>
+            <div className="row">{run.error ? <span className="tag" style={{ color: "#ff8a7a" }}>Launch stopped</span> : run.step === 4 ? <><span className="live-dot" /><span className="tag blue">Live on chain</span></> : <span className="tag blue">Launching ${f.ticker.toUpperCase()}</span>}</div>
+            <h3 className="display mt-16" style={{ fontSize: 26, fontWeight: 700 }}>{run.step === 4 ? `${f.name} is live` : f.name || "Your agent"}</h3>
+            <ol className="mt-16" style={{ display: "grid", gap: 8, fontSize: 14 }}>
+              {["Sign in with your wallet", `Send ${run.sol ?? "…"} SOL to the agent's own wallet`, "Create the coin, the agent wallet as creator", "Lock the fee split on chain", "Verified"].map((t, i) => (
+                <li key={t} className="row" style={{ gap: 10, opacity: i <= run.step ? 1 : 0.4 }}>
+                  <span className="mono" style={{ width: 18, color: i < run.step || run.step === 4 ? "var(--ice)" : "var(--muted)" }}>{i < run.step || run.step === 4 ? "✓" : i === run.step && !run.error ? "…" : "·"}</span>{t}
+                </li>
+              ))}
+            </ol>
+            {run.mint && <p className="mono muted mt-12" style={{ fontSize: 12, wordBreak: "break-all" }}>CA {run.mint}</p>}
+            {run.error && <p className="mt-12" style={{ fontSize: 14, color: "#ff8a7a" }}>{run.error}</p>}
             <div className="row-wrap mt-24" style={{ gap: 10 }}>
-              <button className="btn btn-solid" onClick={() => go(`/agent/${done.id}`)}>Open its page</button>
-              <Link to="/agents?tab=mine" className="btn">My agents</Link>
+              {run.slug && (run.step >= 2 || run.error) && <button className="btn btn-solid" onClick={() => go(`/agent/${run.slug}`)}>Open its page</button>}
+              {!busy && <button className="btn" onClick={() => setRun(null)}>Close</button>}
             </div>
           </div>
         </div>
