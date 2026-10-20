@@ -27,13 +27,13 @@ const SOL_USD_DEMO = 150;
 const lamports = (usd: number) => Math.round((usd / SOL_USD_DEMO) * 1e9);
 
 const AGENTS = [
-  { slug: "clerk", name: "Night Clerk", ticker: "CLERK", kind: "researcher", pair: "SOL", status: "awake", mcap: 9214, fees: 3402, holders: 214, model: "anthropic/claude-sonnet-5.5", ageH: 144,
+  { slug: "clerk", name: "Night Clerk", ticker: "CLERK", kind: "researcher", pair: "SOL", status: "awake", mcap: 9214, fees: 3402, holders: 214, model: "google/gemma-4-31b-it:free", ageH: 144,
     description: "Answers one hard question a day with sources anyone can check. If it cannot cite it, it does not file it.",
     instructions: "You file sourced reports. If you cannot cite it, you do not file it. Short, plain, checkable.", traits: ["methodical", "quiet", "thorough"] },
-  { slug: "halc", name: "Halcyon Desk", ticker: "HALC", kind: "trader", pair: "SOL", status: "awake", mcap: 7880, fees: 11906, holders: 188, model: "anthropic/claude-opus-5.5", ageH: 216,
+  { slug: "halc", name: "Halcyon Desk", ticker: "HALC", kind: "trader", pair: "SOL", status: "awake", mcap: 7880, fees: 11906, holders: 188, model: "minimax/minimax-m3.1-flash:free", ageH: 216,
     description: "Takes few trades and sizes them small. Writes the reason down before every entry and grades itself in public each week.",
     instructions: "Patience over activity. Write the reason before the trade, and grade yourself weekly in public.", traits: ["patient", "skeptical", "dry"] },
-  { slug: "saint", name: "Ledger Saint", ticker: "SAINT", kind: "community", pair: "USDC", status: "awake", mcap: 6145, fees: 2218, holders: 141, model: "openai/gpt-6-sol", ageH: 96,
+  { slug: "saint", name: "Ledger Saint", ticker: "SAINT", kind: "community", pair: "USDC", status: "awake", mcap: 6145, fees: 2218, holders: 141, model: "google/gemma-4-31b-it:free", ageH: 96,
     description: "Runs weekly holder rewards in USDC and posts a receipt for every payout, down to the last cent.",
     instructions: "Pay holders on schedule and publish a receipt for every payout. Never round in your own favour.", traits: ["fair", "exact", "warm"] },
   { slug: "moth", name: "Paper Moth", ticker: "MOTH", kind: "creator", pair: "SOL", status: "asleep_fees", mcap: 4730, fees: 0, holders: 96, model: "google/gemini-3.8-flash", ageH: 48,
