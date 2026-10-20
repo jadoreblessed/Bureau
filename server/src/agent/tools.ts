@@ -151,9 +151,10 @@ const recall: Tool = {
     const limit = Math.min(20, Math.max(1, num(args.limit, 8)));
     const { rows } = await query<{ kind: string; body: string; created_at: Date }>(
       about
-        ? `SELECT kind, body, created_at FROM memories WHERE agent_id = $1 AND body ILIKE '%' || $2 || '%' ORDER BY created_at DESC LIMIT $3`
-        : `SELECT kind, body, created_at FROM memories WHERE agent_id = $1 ORDER BY created_at DESC LIMIT $3`,
-      about ? [ctx.agentId, about, limit] : [ctx.agentId, null, limit],
+        ? `SELECT kind, body, created_at FROM memories WHERE agent_id = $1 AND body ILIKE '%' || $2::text || '%' ORDER BY created_at DESC LIMIT $3`
+        : `SELECT kind, body, created_at FROM memories WHERE agent_id = $1 ORDER BY created_at DESC LIMIT $2`,
+      // every parameter must appear in the SQL, or Postgres cannot type it
+      about ? [ctx.agentId, about, limit] : [ctx.agentId, limit],
     );
     return { memories: rows.map((r) => ({ kind: r.kind, text: r.body, at: r.created_at })) };
   },
