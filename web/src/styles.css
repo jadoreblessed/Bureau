@@ -691,27 +691,46 @@ img.pi { border-radius: 50%; object-fit: cover; background: #111; flex: none; }
 .globe { display: inline-block; width: .7em; height: .7em; flex: none; margin-right: .04em; }
 
 /* home · signal path (Signal / Reasoning / Action as one instrument) */
-.trace-lead { max-width: 640px; margin-bottom: 26px; }
+.trace-lead { max-width: 660px; margin-bottom: 28px; }
 .trace-lead h2 { font-size: clamp(27px, 4.4vw, 48px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.02; }
 .trace-lead p { margin-top: 12px; font-size: clamp(15px, 1.5vw, 17px); line-height: 1.55; color: var(--soft); opacity: .82; }
+.trace-lead p b { color: var(--blue-2); font-weight: 500; }
 
-.trace { overflow: hidden; background: #040507; display: flex; flex-direction: column; }
+.trace { overflow: hidden; display: flex; flex-direction: column;
+  background: radial-gradient(120% 140% at 50% -10%, rgba(61,123,255,.12), rgba(0,0,0,0) 55%), #04060c; }
 .trace-stab { display: flex; justify-content: space-between; padding: 16px 26px 0; font-family: var(--f-mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); pointer-events: none; }
-.trace-canvas-wrap { position: relative; width: 100%; height: clamp(190px, 26vw, 300px); }
+.trace-stab span { transition: color .4s; }
+.trace-canvas-wrap { position: relative; width: 100%; height: clamp(210px, 27vw, 320px); }
 .trace-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .trace-stages { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); }
-.trace-stage { padding: 22px 26px 26px; min-width: 0; }
+.trace-stage { position: relative; padding: 24px 26px 28px; min-width: 0; transition: background .5s; }
 .trace-stage + .trace-stage { border-left: 1px solid var(--line); }
-.trace-word { font-size: clamp(21px, 2.3vw, 30px); font-weight: 700; letter-spacing: -0.02em; }
-.trace-desc { margin-top: 10px; font-size: 13.5px; line-height: 1.55; color: var(--soft); opacity: .78; max-width: 34ch; }
-.trace-cap { display: block; margin-top: 14px; color: var(--blue-2); opacity: .9; }
+/* a phase accent rail that lights when the pulse enters that phase */
+.trace-stage::before { content: ""; position: absolute; top: -1px; left: 0; width: 100%; height: 2px;
+  background: var(--phase); transform: scaleX(0); transform-origin: left; opacity: 0;
+  transition: transform .55s var(--ease-out), opacity .4s; }
+.phase-0 { --phase: #78e0ff; }
+.phase-1 { --phase: #3d7bff; }
+.phase-2 { --phase: #9682ff; }
+.trace-stage.is-lit::before { transform: scaleX(1); opacity: 1; }
+.trace-stage.is-lit { background: linear-gradient(180deg, color-mix(in srgb, var(--phase) 9%, transparent), transparent 70%); }
+.trace-word { font-size: clamp(22px, 2.4vw, 32px); font-weight: 700; letter-spacing: -0.02em;
+  color: var(--soft); transition: color .5s, text-shadow .5s; }
+.trace-stage.is-lit .trace-word { color: #fff; text-shadow: 0 0 22px color-mix(in srgb, var(--phase) 55%, transparent); }
+.trace-desc { margin-top: 10px; font-size: 13.5px; line-height: 1.55; color: var(--soft); opacity: .72; max-width: 34ch; transition: opacity .5s; }
+.trace-stage.is-lit .trace-desc { opacity: .92; }
+.trace-cap { display: block; margin-top: 15px; color: var(--muted); opacity: .85; transition: color .5s; }
+.trace-stage.is-lit .trace-cap { color: var(--phase); opacity: 1; }
 
 @media (max-width: 720px) {
-  .trace-canvas-wrap { height: 150px; }
+  .trace-canvas-wrap { height: 164px; }
   .trace-stages { grid-template-columns: 1fr; }
   .trace-stage + .trace-stage { border-left: 0; border-top: 1px solid var(--line); }
   .trace-desc { max-width: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .trace-stage::before, .trace-stage.is-lit { transition: none; }
 }
 .g-doubt { opacity: .3; animation: gDoubt 4s ease-in-out infinite; }
 @keyframes gDoubt { 0%, 40% { opacity: .3; } 55%, 100% { opacity: .08; } }
