@@ -1,0 +1,98 @@
+# BUREAU — one-click backend deploy (Render Blueprint)
+#
+# What this creates:
+#   • a managed Postgres database
+#   • one web service that runs the WHOLE backend (api + signer + worker) in a
+#     single process, migrating the database on each boot
+#
+# How to use:
+#   1. Push this repo to GitHub.
+#   2. Render Dashboard → New → Blueprint → pick this repo.
+#   3. Render reads this file and creates the database + service.
+#   4. Fill in the env vars marked "sync: false" (generate them first with
+#      `cd server && npm install && npm run gen:secrets` — see DEPLOY.md).
+#   5. Deploy. Then: curl https://<your-service>.onrender.com/health
+#
+# This runs everything in one container — simplest and cheapest. For a
+# hardened setup, run server.js / workers/index.js / signer/service.js as
+# three separate services instead (see server/docker-compose.yml).
+#
+# Note: the free web-service plan sleeps after ~15 min idle (slow first
+# request) and the free Postgres plan expires after ~30 days. Fine for a
+# devnet test run; move to paid before a real launch.
+
+databases:
+  - name: bureau-db
+    plan: free
+    databaseName: bureau
+    user: bureau
+
+services:
+  - type: web
+    name: bureau-backend
+    runtime: docker
+    rootDir: server
+    dockerfilePath: ./Dockerfile
+    # migrate, then start api + signer + worker in one process
+    dockerCommand: sh -c "node dist/util/migrate.js && node dist/all.js"
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # ── wiring (set for you) ──────────────────────────────────────────────
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bureau-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "8080"
+      - key: SIGNER_HOST
+        value: 127.0.0.1
+      - key: SIGNER_URL
+        value: http://127.0.0.1:8081
+      # internal-only shared secret; Render generates a strong value
+      - key: SIGNER_TOKEN
+        generateValue: true
+
+      # ── chain: starts on devnet (safe). Swap to a paid RPC before mainnet. ─
+      - key: SOLANA_CLUSTER
+        value: devnet
+      - key: SOLANA_RPC_URL
+        value: https://api.devnet.solana.com
+
+      # ── safety switches: everything that moves money starts OFF ───────────
+      - key: LAUNCH_ENABLED
+        value: "false"
+      - key: MONEY_ENABLED
+        value: "false"
+      - key: SOCIAL_ENABLED
+        value: "false"
+      # hard ceiling across ALL agents for a bounded test (0.02 SOL). 0 = none.
+      - key: MAX_TOTAL_SPEND_LAMPORTS
+        value: "20000000"
+
+      # ── secrets: paste from `npm run gen:secrets` (see DEPLOY.md) ──────────
+      - key: MASTER_KEY
+        sync: false
+      - key: PLATFORM_PAYER_SECRET
+        sync: false
+      - key: PLATFORM_FEE_WALLET
+        sync: false
+      - key: CREDITS_WALLET
+        sync: false
+      - key: BUYBACK_WALLET
+        sync: false
+
+      # ── your values ───────────────────────────────────────────────────────
+      # the frontend origin(s) allowed to call this API, comma-separated
+      - key: CORS_ORIGINS
+        sync: false
+      # this service's own public URL, e.g. https://bureau-backend.onrender.com
+      - key: PUBLIC_URL
+        sync: false
+      # lets agents think. Without it they stay asleep. https://openrouter.ai
+      - key: OPENROUTER_API_KEY
+        sync: false
