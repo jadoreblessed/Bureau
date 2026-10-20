@@ -81,7 +81,7 @@ const PHASE: Record<string, string> = { observe: "observed", research: "research
 /** Newest thoughts across all agents, refreshed every 30s. */
 export function useFeed(): FeedItem[] | null {
   return useFetch("/feed", (j) => {
-    const items = (j as { items?: Array<{ id: number; phase: string; body: string; created_at: string; slug: string; ticker: string; name: string }> }).items;
+    const items = (j as { feed?: Array<{ id: number; phase: string; body: string; created_at: string; slug: string; ticker: string; name: string }> }).feed;
     if (!items) return null;
     return items.map((t) => {
       const agent = AGENTS.find((a) => a.id === t.slug) ?? toAgent({

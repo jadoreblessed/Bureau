@@ -46,21 +46,6 @@ export async function statsRoutes(app: FastifyInstance) {
     }
   });
 
-  /** The home page's live feed: the newest thoughts across all agents. */
-  app.get("/feed", async (_req, reply) => {
-    try {
-      const { rows } = await query(
-        `SELECT t.id, t.phase, t.body, t.created_at, a.slug, a.ticker, a.name
-           FROM thoughts t JOIN agents a ON a.id = t.agent_id
-          WHERE a.status NOT IN ('pending', 'failed')
-          ORDER BY t.id DESC LIMIT 20`,
-      );
-      return { items: rows };
-    } catch (err) {
-      return send(reply, err);
-    }
-  });
-
   app.get("/burns", async (_req, reply) => {
     try {
       const { rows } = await query(
