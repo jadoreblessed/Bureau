@@ -14,4 +14,4 @@ CREATE INDEX market_snapshots_agent_idx ON market_snapshots (agent_id, created_a
 
 -- Keep it bounded: one row per agent per 5 minutes is plenty for a chart.
 CREATE UNIQUE INDEX market_snapshots_bucket_idx
-  ON market_snapshots (agent_id, date_trunc('hour', created_at), (EXTRACT(MINUTE FROM created_at)::int / 5));
+  ON market_snapshots (agent_id, date_trunc('hour', created_at AT TIME ZONE 'UTC'), (EXTRACT(MINUTE FROM created_at AT TIME ZONE 'UTC')::int / 5));

@@ -9,15 +9,9 @@ import {
 } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
-import {
-  OnlinePumpSdk,
-  PumpSdk,
-  canonicalPumpPoolPdaWithQuote,
-  getBuyTokenAmountFromSolAmount,
-  getSellSolAmountFromTokenAmount,
-  type BondingCurve,
-  type SharingConfig,
-} from "@pump-fun/pump-sdk";
+import { createRequire } from "node:module";
+import type * as PumpSdkModule from "@pump-fun/pump-sdk";
+import type { BondingCurve, SharingConfig } from "@pump-fun/pump-sdk";
 import { PUMP, WSOL_MINT, config } from "../config.js";
 import { connection, payer, pk } from "./rpc.js";
 import { log } from "../logger.js";
@@ -31,6 +25,17 @@ import { retry } from "../util/retry.js";
  * something, this is the only file that needs touching — nothing else
  * imports the SDK.
  */
+// Loaded through require: the SDK's ESM build imports named exports from
+// @coral-xyz/anchor, a CommonJS package, which Node's ESM loader rejects at
+// startup. Its CommonJS build loads fine.
+const {
+  OnlinePumpSdk,
+  PumpSdk,
+  canonicalPumpPoolPdaWithQuote,
+  getBuyTokenAmountFromSolAmount,
+  getSellSolAmountFromTokenAmount,
+} = createRequire(import.meta.url)("@pump-fun/pump-sdk") as typeof PumpSdkModule;
+
 export const sdk = new PumpSdk();
 export const online = new OnlinePumpSdk(connection);
 
