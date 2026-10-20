@@ -119,3 +119,42 @@ export function useLiveAgents(limit = 10): Agent[] | null {
     return list?.length ? list.map(toAgent) : null;
   }, 60_000);
 }
+
+/* ------------------------------------------------------------ one agent, in full */
+
+export interface Thought { id: string; phase: string; body: string; created_at: string }
+export interface Move { kind: string; amount_lamports: string; status: string; reject_reason: string | null; signature: string | null; created_at: string }
+export interface Post { platform: string; body: string; posted_at: string | null; created_at: string }
+export interface AgentDetail {
+  agent: Agent;
+  wallet: string | null;
+  mission: { title: string; goal_label: string; target: number; progress: number } | null;
+  memories: { kind: string; body: string; created_at: string }[];
+  thoughts: Thought[];
+  moves: Move[];
+  posts: Post[];
+  chart: { mcap_usd: number; created_at: string }[];
+}
+
+/** Everything the agent page shows, straight from the API; thoughts refresh every 20s. undefined = loading, null = not found. */
+export function useAgentDetail(slug: string): AgentDetail | null | undefined {
+  const [d, setD] = useState<AgentDetail | null | undefined>(undefined);
+  useEffect(() => {
+    const ctl = new AbortController();
+    const get = (p: string) => fetch(`${API}/agents/${encodeURIComponent(slug)}${p}`, { signal: ctl.signal }).then((r) => (r.ok ? r.json() : null));
+    const load = async () => {
+      try {
+        const [head, th, mv, ps, ch] = await Promise.all([get(""), get("/thoughts?limit=80"), get("/moves"), get("/posts"), get("/chart")]);
+        if (!head?.agent) { setD(null); return; }
+        setD({
+          agent: toAgent(head.agent), wallet: head.agent.agent_wallet ?? null, mission: head.mission ?? null, memories: head.memories ?? [],
+          thoughts: th?.thoughts ?? [], moves: mv?.moves ?? [], posts: ps?.posts ?? [], chart: ch?.points ?? [],
+        });
+      } catch { if (!ctl.signal.aborted) setD((x) => (x === undefined ? null : x)); }
+    };
+    load();
+    const iv = setInterval(() => { if (!document.hidden) load(); }, 20_000);
+    return () => { ctl.abort(); clearInterval(iv); };
+  }, [slug]);
+  return d;
+}
