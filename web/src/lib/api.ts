@@ -60,13 +60,15 @@ function useFetch<T>(path: string, pick: (j: unknown) => T | null, refreshMs = 0
   const [v, setV] = useState<T | null>(null);
   useEffect(() => {
     const ctl = new AbortController();
+    let retry = 0 as ReturnType<typeof setTimeout> | 0;
+    // A failed load (API restarting, network blip) retries after 5s instead of waiting for the next refresh.
     const load = () => fetch(`${API}${path}`, { signal: ctl.signal })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((j) => { const x = j && pick(j); if (x) setV(x); })
-      .catch(() => {});
+      .catch(() => { if (!ctl.signal.aborted) retry = setTimeout(load, 5000); });
     load();
     const iv = refreshMs ? setInterval(() => { if (!document.hidden) load(); }, refreshMs) : 0;
-    return () => { ctl.abort(); if (iv) clearInterval(iv); };
+    return () => { ctl.abort(); if (iv) clearInterval(iv); if (retry) clearTimeout(retry); };
   }, [path]);
   return v;
 }
