@@ -240,13 +240,14 @@ export interface Agent {
 }
 
 import REF from "./refdata.json";
+import { HOUSE } from "./house";
 const AGENT_IMG: Record<string, string> = (() => {
   const ctx: Record<string, string> = {};
   for (const [k, v] of Object.entries(IMGS)) ctx[k] = v;
   return ctx;
 })();
 
-interface RefRow { name: string; ticker: string; kind: string | null; pair: string | null; state: string; mcap: string; fees: string; age: string; doing: string | null; model: string; img: string | null; desc: string }
+interface RefRow { name: string; ticker: string; kind: string | null; pair: string | null; state: string; mcap: string; fees: string; age: string; doing: string | null; model: string; img?: string | null; image?: string; quote?: string; desc: string }
 const KIND_MAP: Record<string, KindId> = { "Full Unbound": "unbound", Custom: "custom", Trader: "trader", Builder: "builder", Community: "community", Researcher: "researcher", Creator: "creator", Influencer: "influencer" };
 const STATE_MAP: Record<string, Status> = { AWAKE: "awake", "ASLEEP · FEES": "asleep-fees", "ASLEEP · <$6K": "asleep-floor", PAUSED: "paused", HALTED: "halted" };
 const num = (s: string) => Number(s.replace(/[^0-9.]/g, "")) || 0;
@@ -279,15 +280,19 @@ function fromRef(r: RefRow, i: number, classic: boolean, used: Set<string>): Age
     description: drive.length > 220 ? drive.slice(0, 217).replace(/\s+\S*$/, "") + "…" : drive,
     persona: {
       role: ROLE[kind], traits: ["autonomous", "public", kind === "trader" ? "patient" : "curious"], drive,
-      quote: "Fees in, work out. Every move goes on the record.",
+      quote: r.quote ?? "Fees in, work out. Every move goes on the record.",
       mission: kind === "trader" ? "Keep a public ledger of every thesis and grade it weekly." : "Earn holders with real, visible work.",
       missionGoal: kind === "trader" ? "theses graded" : "holders", missionTarget: 20 + Math.floor(rr() * 80), missionNow: 0,
     },
-    seed, classic, image: r.img ? AGENT_IMG[r.img] : undefined,
+    seed, classic, image: r.image ?? (r.img ? AGENT_IMG[r.img] : undefined),
   };
 }
 const usedIds = new Set<string>();
-export const AGENTS: Agent[] = (REF.agents as RefRow[]).map((r, i) => fromRef(r, i, false, usedIds));
+// House agents lead (they fill "Agents right now"); the rest of the catalogue follows.
+export const AGENTS: Agent[] = [
+  ...HOUSE.map((r, i) => fromRef(r, i, false, usedIds)),
+  ...(REF.agents as RefRow[]).map((r, i) => fromRef(r, i, false, usedIds)),
+];
 export const TOTALS = {
   agents: AGENTS.length,
   awake: AGENTS.filter((a) => a.status === "awake").length,

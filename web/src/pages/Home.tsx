@@ -5,6 +5,7 @@ import {
   TOTALS, ago, fmtNum, fmtUsd, makeFeed, type FeedItem,
 } from "../lib/data";
 import { launched, useStore } from "../lib/store";
+import { useLiveAgents } from "../lib/api";
 import { Avatar } from "../components/Avatar";
 import { ProviderIcon } from "../components/icons";
 import { Glyph, WireGlobe } from "../components/Glyphs";
@@ -49,7 +50,8 @@ function LiveFeed() {
 
 export default function Home({ introDone }: { introDone: boolean }) {
   const mine = useStore(launched);
-  const top = [...mine, ...AGENTS].slice(0, 10);
+  const live = useLiveAgents(10);
+  const top = [...mine, ...(live ?? AGENTS)].slice(0, 10);
   const kindCount = (id: string) => [...mine, ...AGENTS].filter((a) => a.kind === id).length;
 
   return (

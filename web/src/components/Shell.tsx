@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "../lib/router";
-import { useClock } from "../lib/store";
 import { initDotSphere, initOrb, type OrbCtl } from "../lib/orb";
 import { SITE } from "../lib/data";
 import { Mark, XLogo } from "./icons";
@@ -25,7 +24,6 @@ export function Logo() {
 
 export function Header() {
   const route = useRoute();
-  const clock = useClock();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -47,7 +45,6 @@ export function Header() {
             {NAV.map((n) => (<Link key={n.to} to={n.to} className={active(n.to) ? "on" : ""}>{n.label}</Link>))}
           </nav>
           <div className="hdr-right">
-            <span className="clock">{clock} UTC</span>
             <CAButton />
             <a className="btn btn-sm btn-icon hide-sm" href={SITE.x} target="_blank" rel="noreferrer" aria-label="BUREAU on X"><XLogo className="ic" /></a>
             <Link to="/launch" className="btn btn-sm btn-solid hide-sm">Launch</Link>
@@ -69,7 +66,6 @@ export function Header() {
           <Link to="/launch" className="btn btn-solid btn-block">Launch an agent</Link>
           <div className="between"><CAButton /><a className="btn btn-sm" href={SITE.x} target="_blank" rel="noreferrer"><XLogo className="ic" />{SITE.xHandle}</a></div>
         </div>
-        <div className="label">{clock} UTC · Solana mainnet</div>
       </div>
     </>
   );

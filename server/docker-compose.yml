@@ -33,7 +33,7 @@ services:
     depends_on:
       db: { condition: service_healthy }
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"   # nginx in front; not exposed to the internet directly
     command: ["node", "dist/server.js"]
 
   worker:

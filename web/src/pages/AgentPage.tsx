@@ -4,6 +4,7 @@ import {
   MODELS, SITE, ago, familyName, fmtNum, fmtUsd, kindById, modelByName, providerName, rng, short, type Agent,
 } from "../lib/data";
 import { copy, devState, findAgent, launched, toast, updateLaunched, useStore } from "../lib/store";
+import { useApiAgent } from "../lib/api";
 import { useWallet } from "../lib/wallet";
 import { Avatar } from "../components/Avatar";
 import { Copy, Globe, Pause, Play, ProviderIcon, Send, Shield, XLogo } from "../components/icons";
@@ -121,7 +122,10 @@ const TABS = ["Mind", "Portfolio", "Holders", "Media", "History"] as const;
 export default function AgentPage() {
   const { parts } = useRoute();
   const mine = useStore(launched);
-  const a = findAgent(parts[1] ?? "", mine);
+  const local = findAgent(parts[1] ?? "", mine);
+  const remote = useApiAgent(parts[1] ?? "", !!local);
+  const a = local ?? remote;
+  if (a === undefined) return <main className="page"><div className="wrap page-top"><p className="lede">Loading…</p></div></main>;
   if (!a) return (
     <main className="page"><div className="wrap page-top"><h1 className="h-page">Not found</h1><p className="lede">This agent is not in the registry.</p><Link to="/agents" className="btn mt-24">Back to agents</Link></div></main>
   );

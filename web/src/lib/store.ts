@@ -70,13 +70,6 @@ export async function copy(text: string, label = "Copied") {
   toast(label, "ok");
 }
 
-/* utc clock */
-export function useClock() {
-  const [t, setT] = useState(() => new Date());
-  useEffect(() => { const i = setInterval(() => setT(new Date()), 1000); return () => clearInterval(i); }, []);
-  return t.toISOString().slice(11, 19);
-}
-
 /* in-view hook for reveals + pausing work offscreen */
 export function useInView<T extends Element>(opts: IntersectionObserverInit = { threshold: 0.15 }, once = true) {
   const [el, setEl] = useState<T | null>(null);
