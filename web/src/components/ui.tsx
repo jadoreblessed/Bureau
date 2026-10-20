@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode, type ElementType, type CSSProperties } from "react";
 import { Link } from "../lib/router";
 import { copy, toasts, useInView, useStore } from "../lib/store";
+import { useSite } from "../lib/site";
 import { phantomDeepLink, useWallet } from "../lib/wallet";
 import {
-  type Agent, SITE, STATUS_LABEL, fmtUsd, kindById, modelByName, pairBySym, short, statusClass,
+  type Agent, STATUS_LABEL, fmtUsd, kindById, modelByName, pairBySym, short, statusClass,
 } from "../lib/data";
 import { Check, Copy, Logout, Mark, Phantom, ProviderIcon } from "./icons";
 import { Avatar } from "./Avatar";
@@ -112,16 +113,17 @@ export function AgentCard({ a, i }: { a: Agent; i: number }) {
 /* ------------------------------------------------------------ CA button */
 export function CAButton({ compact = false }: { compact?: boolean }) {
   const [done, setDone] = useState(false);
-  const has = !!SITE.ca;
+  const site = useSite();
+  const has = !!site.ca;
   const onClick = () => {
-    if (!has) { copy(SITE.token, "Contract address drops at launch — follow " + SITE.xHandle); return; }
-    copy(SITE.ca, "Contract address copied");
+    if (!has) { copy(site.token, "Contract address drops at launch — follow " + site.xHandle); return; }
+    copy(site.ca, "Contract address copied");
     setDone(true); setTimeout(() => setDone(false), 1600);
   };
   return (
-    <button type="button" className={`ca-btn ${done ? "copied" : ""}`} onClick={onClick} title={has ? SITE.ca : "Contract address — soon"}>
+    <button type="button" className={`ca-btn ${done ? "copied" : ""}`} onClick={onClick} title={has ? site.ca : "Contract address — soon"}>
       <span className="ca-k">CA</span>
-      {!compact && <span className="ca-v">{has ? short(SITE.ca, 4, 4) : "soon"}</span>}
+      {!compact && <span className="ca-v">{has ? short(site.ca, 4, 4) : "soon"}</span>}
       <span className="ca-c">{done ? <Check className="ic" /> : <Copy className="ic" />}</span>
     </button>
   );

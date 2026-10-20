@@ -12,6 +12,8 @@ import Explore from "./pages/Explore";
 import AgentPage from "./pages/AgentPage";
 import Launch from "./pages/Launch";
 import { Capabilities, Docs, How } from "./pages/Info";
+import Admin from "./pages/Admin";
+import { loadSite } from "./lib/site";
 
 
 function App() {
@@ -43,4 +45,7 @@ function App() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+// /admin is a real path (nginx serves index.html for it), not a hash route, and is not linked from the site.
+const isAdmin = window.location.pathname.replace(/\/+$/, "") === "/admin";
+if (!isAdmin) loadSite();
+createRoot(document.getElementById("root")!).render(isAdmin ? <Admin /> : <App />);

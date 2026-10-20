@@ -92,6 +92,10 @@ const schema = z.object({
   SESSION_TTL_HOURS: z.coerce.number().default(168),
   SIGNER_URL: z.string().url().default("http://localhost:8081"),
   SIGNER_TOKEN: z.string().min(24),
+
+  // ---------------------------------------------------------------- admin
+  /** Bearer token for /admin (site settings). Unset = admin disabled. openssl rand -hex 24 */
+  ADMIN_TOKEN: z.string().min(24).optional(),
 });
 
 const parsed = schema.safeParse(process.env);

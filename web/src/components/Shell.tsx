@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "../lib/router";
 import { initDotSphere, initOrb, type OrbCtl } from "../lib/orb";
 import { SITE } from "../lib/data";
+import { useSite } from "../lib/site";
 import { Mark, XLogo } from "./icons";
 import { CAButton, WalletButton } from "./ui";
 
@@ -23,6 +24,7 @@ export function Logo() {
 }
 
 export function Header() {
+  const site = useSite();
   const route = useRoute();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -46,10 +48,10 @@ export function Header() {
           </nav>
           <div className="hdr-right">
             <CAButton />
-            <a className="btn btn-sm btn-icon hide-sm" href={SITE.x} target="_blank" rel="noreferrer" aria-label="BUREAU on X"><XLogo className="ic" /></a>
+            <a className="btn btn-sm btn-icon hide-sm" href={site.x} target="_blank" rel="noreferrer" aria-label="BUREAU on X"><XLogo className="ic" /></a>
             <Link to="/launch" className="btn btn-sm btn-solid hide-sm">Launch</Link>
             <span className="hide-sm"><WalletButton /></span>
-            <a className="btn btn-sm btn-icon show-sm" href={SITE.x} target="_blank" rel="noreferrer" aria-label="BUREAU on X"><XLogo className="ic" /></a>
+            <a className="btn btn-sm btn-icon show-sm" href={site.x} target="_blank" rel="noreferrer" aria-label="BUREAU on X"><XLogo className="ic" /></a>
             <button type="button" className={`burger show-sm ${open ? "open" : ""}`} onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
               <span className="burger-lines"><span /><span /></span>
             </button>
@@ -64,7 +66,7 @@ export function Header() {
         <div className="stack">
           <WalletButton block size="md" />
           <Link to="/launch" className="btn btn-solid btn-block">Launch an agent</Link>
-          <div className="between"><CAButton /><a className="btn btn-sm" href={SITE.x} target="_blank" rel="noreferrer"><XLogo className="ic" />{SITE.xHandle}</a></div>
+          <div className="between"><CAButton /><a className="btn btn-sm" href={site.x} target="_blank" rel="noreferrer"><XLogo className="ic" />{site.xHandle}</a></div>
         </div>
       </div>
     </>
@@ -72,6 +74,7 @@ export function Header() {
 }
 
 export function Footer() {
+  const site = useSite();
   return (
     <footer className="ftr">
       <div className="wrap">
@@ -84,7 +87,7 @@ export function Footer() {
           </div>
           <div><h5>Platform</h5><ul><li><Link to="/launch">Launch</Link></li><li><Link to="/agents">Explore agents</Link></li><li><Link to="/capabilities">Capabilities</Link></li><li><Link to="/how">How it works</Link></li></ul></div>
           <div><h5>Docs</h5><ul><li><Link to="/docs?s=economics">Economics</Link></li><li><Link to="/docs?s=minds">Agents</Link></li><li><Link to="/docs?s=firewall">Firewall</Link></li><li><Link to="/docs?s=faq">FAQ</Link></li></ul></div>
-          <div><h5>Network</h5><ul><li><span>Solana mainnet</span></li><li><span>Pump · PumpSwap</span></li><li><span>OpenRouter</span></li><li><a href={SITE.x} target="_blank" rel="noreferrer">X · {SITE.xHandle}</a></li></ul></div>
+          <div><h5>Network</h5><ul><li><span>Solana mainnet</span></li><li><span>Pump · PumpSwap</span></li><li><span>OpenRouter</span></li><li><a href={site.x} target="_blank" rel="noreferrer">X · {site.xHandle}</a></li></ul></div>
         </div>
         <div className="ftr-big" aria-hidden="true">BUREAU</div>
         <div className="ftr-bot"><span>© 2026 BUREAU</span><span>{SITE.version}</span><span>Every coin gets an agent</span></div>

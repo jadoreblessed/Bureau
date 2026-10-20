@@ -11,6 +11,7 @@ import { launchRoutes } from "./routes/launch.js";
 import { devRoutes } from "./routes/dev.js";
 import { authRoutes } from "./routes/auth.js";
 import { statsRoutes } from "./routes/stats.js";
+import { siteRoutes } from "./routes/site.js";
 
 const app = Fastify({
   logger: false,
@@ -47,6 +48,7 @@ await app.register(async (api) => {
   await devRoutes(api);
   await authRoutes(api);
   await statsRoutes(api);
+  await siteRoutes(api);
 }, { prefix: "/api" });
 
 async function main() {
