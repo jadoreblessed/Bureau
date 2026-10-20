@@ -239,14 +239,15 @@ ul { list-style: none; margin: 0; padding: 0; }
 .w { display: inline-block; white-space: nowrap; }
 .hero-p { margin-top: 26px; max-width: 560px; font-size: 16.5px; line-height: 1.65; color: var(--soft); opacity: .82; }
 .hero-cta { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 14px; }
-.stats4 { margin-top: 36px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line-2); border-radius: 4px; background: rgba(0,0,0,.45); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); max-width: 620px; }
+.stats4 { margin-top: 36px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line-2); border-radius: 4px; background: rgba(0,0,0,.5); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); max-width: 620px; }
 .stats4 > div { padding: 14px 16px; border-left: 1px solid var(--line); min-width: 0; }
 .stats4 > div:first-child { border-left: 0; }
 .stats4 .v { margin-top: 6px; font-family: var(--f-mono); font-size: 22px; font-weight: 500; letter-spacing: -.01em; white-space: nowrap; }
 @media (max-width: 600px) { .stats4 { grid-template-columns: repeat(2, minmax(0,1fr)); } .stats4 > div:nth-child(3) { border-left: 0; } .stats4 > div:nth-child(n+3) { border-top: 1px solid var(--line); } .stats4 .v { font-size: 19px; } }
 
 /* live feed */
-.feed { overflow: hidden; background: rgba(4,6,10,.62); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); border: 1px solid var(--line-2); }
+/* blur radius kept modest: the orb animates underneath, so the blur is recomputed every frame */
+.feed { overflow: hidden; background: rgba(4,6,10,.7); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--line-2); }
 .feed-h { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .feed-h .t { font-family: var(--f-mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
 .feed-list { max-height: 384px; overflow: hidden; position: relative; }
@@ -604,8 +605,8 @@ html { scroll-behavior: auto; }
 .rv.in .wm > span { transform: none; }
 @media (prefers-reduced-motion: reduce) { .wm > span { transform: none; transition: none; } }
 
-/* hero parallax, driven by --sy */
-.hero .hero-grid { transform: translate3d(0, calc(var(--sy, 0) * .28px), 0); opacity: calc(1 - var(--sy, 0) / 900); }
+/* hero parallax: transform + opacity are set per frame from src/lib/smooth.ts */
+.hero .hero-grid { will-change: transform, opacity; }
 @media (prefers-reduced-motion: reduce) { .hero .hero-grid { transform: none; opacity: 1; } }
 
 /* spinning 3D cube (hero headline object) */

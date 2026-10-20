@@ -1,6 +1,7 @@
 // Inertial smooth scrolling (Lenis-style) for mouse wheels and trackpads.
-// Touch devices keep native scrolling. Also publishes the scroll position
-// as the CSS variable --sy once per frame for scroll-linked effects.
+// Touch devices keep native scrolling. Also drives the home hero parallax by
+// writing transform/opacity on .hero-grid directly: a CSS variable would
+// restyle every element under it (the split headline included) each frame.
 
 let target = 0;
 let current = 0;
@@ -10,7 +11,16 @@ let last = 0;
 
 const root = document.documentElement;
 const maxY = () => Math.max(0, root.scrollHeight - window.innerHeight);
-const publish = (y: number) => root.style.setProperty("--sy", y.toFixed(1));
+let hero: HTMLElement | null = null;
+let published = -1;
+const publish = (y: number) => {
+  if (y > 1200 && published > 1200) return; // parallax has fully faded out
+  if (!hero?.isConnected) hero = document.querySelector<HTMLElement>(".hero .hero-grid");
+  if (!hero) return;
+  hero.style.transform = `translate3d(0, ${(y * 0.28).toFixed(1)}px, 0)`;
+  hero.style.opacity = String(Math.max(0, 1 - y / 900));
+  published = y;
+};
 
 function canScrollInside(el: Element | null, dy: number): boolean {
   while (el && el !== document.body && el !== root) {

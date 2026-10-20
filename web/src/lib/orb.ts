@@ -49,7 +49,7 @@ void main() {
   float topGlow = smoothstep(0.55, 1.0, vertical);
   vec3 col = mix(vec3(0.05, 0.18, 0.55), vec3(0.20, 0.45, 0.95), smoothstep(0.0, 0.7, vertical));
   col = mix(col, vec3(0.80, 0.92, 1.00), topGlow * 0.9);
-  float spark = 0.6 + 0.5 * snoise(pos * 4.0 + aSeed * 3.0);
+  float spark = 0.6 + 0.5 * sin(dot(pos, vec3(12.9, 7.3, 5.1)) + aSeed * 31.0); // cheap stand-in for a 4th snoise
   vIntensity = (0.35 + 0.65 * vertical) * spark * entrance;
   vColor = col;
   gl_Position = uProj * mv;
@@ -104,8 +104,9 @@ export function initOrb(mount: HTMLElement, ctl: OrbCtl): () => void {
 
   const small = mount.clientWidth < 768;
   const lowCores = (navigator.hardwareConcurrency || 4) <= 4;
-  const count = small ? 42000 : lowCores ? 70000 : 110000;
-  const pr = Math.min(window.devicePixelRatio || 1, 1.5);
+  // Fewer, slightly larger points keep the fine-dust look at a fraction of the GPU cost.
+  const count = small ? 26000 : lowCores ? 42000 : 64000;
+  const pr = Math.min(window.devicePixelRatio || 1, 1.25);
   const { pos, sc, sd } = buffers(count);
   const attr = (name: string, data: Float32Array, size: number) => {
     const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
@@ -115,7 +116,7 @@ export function initOrb(mount: HTMLElement, ctl: OrbCtl): () => void {
   const bufs = [attr("position", pos, 3), attr("aScale", sc, 1), attr("aSeed", sd, 1)];
   const U = (n: string) => gl.getUniformLocation(prog, n);
   const uProj = U("uProj"), uView = U("uView"), uTime = U("uTime"), uSize = U("uSize"), uPR = U("uPixelRatio"), uProg = U("uProgress");
-  gl.uniform1f(uSize, small ? 16 : 14);
+  gl.uniform1f(uSize, small ? 18.5 : 16);
   gl.uniform1f(uPR, pr);
   gl.disable(gl.DEPTH_TEST);
   gl.enable(gl.BLEND);

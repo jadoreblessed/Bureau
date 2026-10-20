@@ -183,17 +183,29 @@ export function WireGlobe({ className = "" }: { className?: string }) {
         const y2 = y * Math.cos(tilt) - z * Math.sin(tilt), z2 = y * Math.sin(tilt) + z * Math.cos(tilt);
         return [cx + x * R, cy - y2 * R, z2] as const;
       };
+      // Segments are grouped by depth into a few shades and stroked once per
+      // shade: shadowBlur per stroke is the expensive part, not the geometry.
+      const SHADES = 8;
+      const buckets: number[][] = Array.from({ length: SHADES * 2 }, () => []);
       const path = (pts: (readonly [number, number, number])[]) => {
         for (let i = 1; i < pts.length; i++) {
           const [x0, y0, z0] = pts[i - 1], [x1, y1, z1] = pts[i];
           const z = (z0 + z1) / 2;
-          ctx.strokeStyle = z > 0 ? `rgba(160,196,255,${0.55 + z * 0.45})` : `rgba(61,123,255,${0.12 + (1 + z) * 0.12})`;
-          ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+          const k = Math.min(SHADES - 1, Math.floor(Math.abs(z) * SHADES));
+          buckets[(z > 0 ? SHADES : 0) + k].push(x0, y0, x1, y1);
         }
       };
       const N = 48;
       for (let m = 0; m < 6; m++) { const lon = (m / 6) * Math.PI; path(Array.from({ length: N * 2 + 1 }, (_, i) => P(lon, -Math.PI / 2 + (i / (N * 2)) * Math.PI * 2))); }
       for (let l = -2; l <= 2; l++) { const lat = (l / 3) * (Math.PI / 2); path(Array.from({ length: N + 1 }, (_, i) => P((i / N) * Math.PI * 2, lat))); }
+      buckets.forEach((seg, b) => {
+        if (!seg.length) return;
+        const front = b >= SHADES, z = ((b % SHADES) + 0.5) / SHADES;
+        ctx.strokeStyle = front ? `rgba(160,196,255,${0.55 + z * 0.45})` : `rgba(61,123,255,${0.12 + (1 - z) * 0.12})`;
+        ctx.beginPath();
+        for (let i = 0; i < seg.length; i += 4) { ctx.moveTo(seg[i], seg[i + 1]); ctx.lineTo(seg[i + 2], seg[i + 3]); }
+        ctx.stroke();
+      });
       // outline
       ctx.strokeStyle = "rgba(207,227,255,.95)"; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
       // travelling signal dot

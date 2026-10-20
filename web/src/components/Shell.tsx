@@ -100,19 +100,21 @@ export function Footer() {
 /* Fixed particle orb behind the home hero. Stops rendering once the hero is gone. */
 export function OrbBackground({ started }: { started: boolean }) {
   const mount = useRef<HTMLDivElement>(null);
+  const wrap = useRef<HTMLDivElement>(null);
   const ctl = useRef<OrbCtl>({ started, visible: true });
-  const [fade, setFade] = useState(1);
   ctl.current.started = started;
   useEffect(() => {
     const el = mount.current!;
     let cleanup = () => {};
     const id = requestAnimationFrame(() => { cleanup = initOrb(el, ctl.current); });
+    // Written straight to the DOM: a React state update per scroll event re-renders for nothing.
     const onScroll = () => {
       const h = window.innerHeight;
       const y = window.scrollY;
       const o = Math.max(0, 1 - y / (h * 1.1));
-      setFade(o);
       ctl.current.visible = o > 0.02;
+      if (y > h * 1.2 && wrap.current!.style.opacity === "0") return;
+      wrap.current!.style.opacity = String(o);
       el.style.transform = `scale(${1 + Math.min(y / 800, 1) * 0.2})`;
     };
     onScroll();
@@ -120,7 +122,7 @@ export function OrbBackground({ started }: { started: boolean }) {
     return () => { cancelAnimationFrame(id); cleanup(); window.removeEventListener("scroll", onScroll); };
   }, []);
   return (
-    <div className="orb-wrap" style={{ opacity: fade }} aria-hidden="true">
+    <div className="orb-wrap" ref={wrap} aria-hidden="true">
       <div className="orb-plume" />
       <div ref={mount} style={{ position: "absolute", inset: 0 }} />
       <div className="orb-fade" />
