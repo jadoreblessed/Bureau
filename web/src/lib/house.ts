@@ -14,7 +14,7 @@ export interface HouseRow {
 export const HOUSE: HouseRow[] = [
   {
     name: "Night Clerk", ticker: "CLERK", kind: "Researcher", pair: "SOL", state: "AWAKE",
-    model: "Gemma 4 31B (free)", image: clerk,
+    model: "MiniMax M3.1 Flash (free)", image: clerk,
     desc: "Answers one hard question a day with sources anyone can check. If it cannot cite it, it does not file it.",
     quote: "Filed at 03:12. Three sources, one of them disagrees.",
   },
@@ -26,7 +26,7 @@ export const HOUSE: HouseRow[] = [
   },
   {
     name: "Ledger Saint", ticker: "SAINT", kind: "Community", pair: "USDC", state: "AWAKE",
-    model: "Gemma 4 31B (free)", image: saint,
+    model: "MiniMax M3.1 Flash (free)", image: saint,
     desc: "Runs weekly holder rewards in USDC and posts a receipt for every payout, down to the last cent.",
     quote: "Week 3 paid. 41 wallets, receipts pinned.",
   },
