@@ -225,9 +225,9 @@ ul { list-style: none; margin: 0; padding: 0; }
 .orb-fade { position: absolute; inset: auto 0 0 0; height: 22vh; background: linear-gradient(to bottom, transparent, #000); }
 
 .hero { position: relative; min-height: 100svh; display: flex; align-items: center; padding: calc(var(--header-h) + 40px) 0 64px; }
-.hero-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .88fr); gap: 56px; align-items: center; }
 @media (max-width: 1080px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
-.hero h1 { font-family: var(--f-display); font-weight: 700; text-transform: uppercase; line-height: .9; letter-spacing: -.025em; font-size: clamp(48px, 7.4vw, 112px); margin-top: 22px; }
+.hero h1 { font-family: var(--f-display); font-weight: 700; text-transform: uppercase; line-height: .9; letter-spacing: -.025em; font-size: clamp(44px, 6.1vw, 92px); margin-top: 22px; }
 .hero h1 .ln { display: flex; align-items: center; gap: .22em; white-space: nowrap; }
 .hero h1 .ln-2 { color: #fff; text-shadow: 0 0 22px rgba(255,255,255,.28); }
 .hero h1 .ln-1 { -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,.25), #000 70%); mask-image: linear-gradient(to right, rgba(0,0,0,.25), #000 70%); }
@@ -249,9 +249,9 @@ ul { list-style: none; margin: 0; padding: 0; }
 .feed { overflow: hidden; background: rgba(4,6,10,.62); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); border: 1px solid var(--line-2); }
 .feed-h { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .feed-h .t { font-family: var(--f-mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
-.feed-list { max-height: 470px; overflow: hidden; position: relative; }
+.feed-list { max-height: 384px; overflow: hidden; position: relative; }
 .feed-list::after { content: ""; position: absolute; inset: auto 0 0 0; height: 60px; background: linear-gradient(transparent, rgba(4,6,10,.95)); pointer-events: none; }
-.fi { display: grid; grid-template-columns: 38px minmax(0,1fr); gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); transition: background .2s; animation: fiIn .7s var(--ease); }
+.fi { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); transition: background .2s; animation: fiIn .7s var(--ease); }
 .fi:hover { background: rgba(255,255,255,.025); }
 @keyframes fiIn { from { opacity: 0; transform: translateY(-10px); background: rgba(61,123,255,.08); } to { opacity: 1; transform: none; } }
 .fi .meta { display: flex; align-items: baseline; gap: 8px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); flex-wrap: wrap; }
