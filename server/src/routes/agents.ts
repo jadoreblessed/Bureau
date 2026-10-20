@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import { config } from "../config.js";
 import { query, one } from "../db.js";
 import { notFound, send } from "../http/errors.js";
 
@@ -75,6 +76,32 @@ export async function agentRoutes(app: FastifyInstance) {
                FROM agent_policy WHERE agent_id = $1`, [id]),
       ]);
       return { agent, mission, memories: memories.rows, policy };
+    } catch (err) {
+      return send(reply, err);
+    }
+  });
+
+  /** Token metadata (Metaplex JSON) for coins whose IPFS upload fell back to us. */
+  app.get("/meta/:file", async (req, reply) => {
+    try {
+      const slug = (req.params as { file: string }).file.replace(/\.json$/, "");
+      const a = await one<{ name: string; ticker: string; description: string; image_url: string | null; links: { x?: string; telegram?: string } }>(
+        `SELECT name, ticker, description, image_url, links FROM agents WHERE slug = $1`,
+        [slug],
+      );
+      if (!a) throw notFound("no such agent");
+      const site = config.PUBLIC_URL.replace(/\/$/, "");
+      return {
+        name: a.name,
+        symbol: a.ticker,
+        description: a.description,
+        image: a.image_url ?? "",
+        showName: true,
+        createdOn: site,
+        website: `${site}/#/agent/${slug}`,
+        ...(a.links?.x ? { twitter: a.links.x } : {}),
+        ...(a.links?.telegram ? { telegram: a.links.telegram } : {}),
+      };
     } catch (err) {
       return send(reply, err);
     }

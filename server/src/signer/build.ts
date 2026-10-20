@@ -55,7 +55,9 @@ export async function buildIntent(intent: Intent, agent: Keypair, ownMint: strin
     case "burn": {
       // Burns only ever touch tokens the agent already holds.
       const mint = pk(intent.mint ?? ownMint);
-      const ata = getAssociatedTokenAddressSync(mint, agent.publicKey, true);
+      // Pump coins are Token-2022 now; burn with whichever program owns the mint.
+      const tokenProgram = (await connection.getAccountInfo(mint))?.owner ?? TOKEN_PROGRAM_ID;
+      const ata = getAssociatedTokenAddressSync(mint, agent.publicKey, true, tokenProgram);
       const supplyInfo = await connection.getTokenSupply(mint);
       const decimals = supplyInfo.value.decimals;
       const held = await connection.getTokenAccountBalance(ata);
@@ -64,7 +66,7 @@ export async function buildIntent(intent: Intent, agent: Keypair, ownMint: strin
         throw new Error("cannot burn more than the agent holds");
       }
       return {
-        instructions: [createBurnCheckedInstruction(ata, mint, agent.publicKey, amount, decimals, [], TOKEN_PROGRAM_ID)],
+        instructions: [createBurnCheckedInstruction(ata, mint, agent.publicKey, amount, decimals, [], tokenProgram)],
         signers: [],
         label: "burn",
       };

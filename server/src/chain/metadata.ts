@@ -1,3 +1,4 @@
+import { config } from "../config.js";
 import { log } from "../logger.js";
 import { withTimeout, retry } from "../util/retry.js";
 
@@ -17,9 +18,26 @@ export interface MetadataInput {
   twitter?: string | undefined;
   telegram?: string | undefined;
   website?: string | undefined;
+  /** Used for the self-hosted fallback URI. */
+  slug: string;
 }
 
+/**
+ * Pump's IPFS uploader first; if it is down or refuses us, the API serves the
+ * same JSON itself (GET /api/meta/<slug>.json). The chain only stores a URI, so
+ * either works; IPFS is preferred because it outlives this server.
+ */
 export async function uploadMetadata(input: MetadataInput): Promise<string> {
+  try {
+    return await uploadToPumpIpfs(input);
+  } catch (err) {
+    const uri = `${config.PUBLIC_URL.replace(/\/$/, "")}/api/meta/${input.slug}.json`;
+    log.warn({ err, uri }, "pump IPFS upload failed; using self-hosted metadata");
+    return uri;
+  }
+}
+
+async function uploadToPumpIpfs(input: MetadataInput): Promise<string> {
   const form = new FormData();
   form.set("name", input.name);
   form.set("symbol", input.symbol);

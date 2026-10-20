@@ -68,6 +68,7 @@ async function processOne(row: FundedRow): Promise<void> {
     twitter: row.links?.x,
     telegram: row.links?.telegram,
     website: `${config.PUBLIC_URL.replace(/\/api$/, "")}/#/agent/${row.slug}`,
+    slug: row.slug,
   });
 
   const res = await withTimeout(

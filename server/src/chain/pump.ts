@@ -73,15 +73,16 @@ async function createIxs(a: {
   creator: PublicKey; user: PublicKey; mint: PublicKey; name: string; symbol: string; uri: string;
   devBuyLamports: number; slippageBps: number;
 }): Promise<TransactionInstruction[]> {
-  const base = { mint: a.mint, name: a.name, symbol: a.symbol, uri: a.uri, creator: a.creator, user: a.user };
-  if (a.devBuyLamports <= 0) return [await sdk.createInstruction(base)];
+  // create_v2 (Token-2022 mint); the legacy create is deprecated in the SDK.
+  const base = { mint: a.mint, name: a.name, symbol: a.symbol, uri: a.uri, creator: a.creator, user: a.user, mayhemMode: false };
+  if (a.devBuyLamports <= 0) return [await sdk.createV2Instruction(base)];
   const [global, feeConfig] = await Promise.all([online.fetchGlobal(), online.fetchFeeConfig().catch(() => null)]);
   const solAmount = new BN(a.devBuyLamports);
   const amount = getBuyTokenAmountFromSolAmount({
     global, feeConfig, mintSupply: null, bondingCurve: null,
     amount: withSlippage(solAmount, a.slippageBps), quoteMint: pk(WSOL_MINT),
   });
-  return sdk.createAndBuyInstructions({ ...base, global, amount, solAmount });
+  return sdk.createV2AndBuyInstructions({ ...base, global, amount, solAmount });
 }
 
 interface LiveCurve { curveInfo: import("@solana/web3.js").AccountInfo<Buffer>; bondingCurve: BondingCurve }
