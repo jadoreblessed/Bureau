@@ -10,7 +10,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { sdk } from "../chain/pump.js";
+import { buyInstructionsFor, sellInstructionsFor } from "../chain/pump.js";
 import { connection, pk } from "../chain/rpc.js";
 import type { Intent } from "../policy/engine.js";
 
@@ -32,36 +32,22 @@ export interface BuildResult {
 export async function buildIntent(intent: Intent, agent: Keypair, ownMint: string): Promise<BuildResult> {
   switch (intent.kind) {
     case "buyback": {
-      const mint = pk(intent.mint ?? ownMint);
-      const global = await sdk.fetchGlobal();
-      const bondingCurve = await sdk.fetchBondingCurve(mint).catch(() => null);
-      const ata = getAssociatedTokenAddressSync(mint, agent.publicKey, true);
-      const ataInfo = await connection.getAccountInfo(ata).catch(() => null);
-      const ixs: TransactionInstruction[] = await sdk.buyInstructions({
-        global,
-        bondingCurveAccountInfo: bondingCurve ? await connection.getAccountInfo(sdk.bondingCurvePda(mint)) : null,
-        bondingCurve,
-        associatedUserAccountInfo: ataInfo,
-        mint,
+      const ixs = await buyInstructionsFor({
+        mint: pk(intent.mint ?? ownMint),
         user: agent.publicKey,
-        solAmount: intent.amountLamports,
-        slippage: (intent.slippageBps ?? 100) / 100,
+        lamports: intent.amountLamports,
+        slippageBps: intent.slippageBps ?? 100,
       });
       return { instructions: ixs, signers: [], label: "buyback" };
     }
 
     case "sell": {
-      const mint = pk(intent.mint ?? ownMint);
-      const global = await sdk.fetchGlobal();
-      const bondingCurve = await sdk.fetchBondingCurve(mint).catch(() => null);
-      const ixs: TransactionInstruction[] = await sdk.sellInstructions({
-        global,
-        bondingCurveAccountInfo: bondingCurve ? await connection.getAccountInfo(sdk.bondingCurvePda(mint)) : null,
-        bondingCurve,
-        mint,
+      // for a sell, amountLamports carries the token amount in atoms
+      const ixs = await sellInstructionsFor({
+        mint: pk(intent.mint ?? ownMint),
         user: agent.publicKey,
-        amount: intent.amountLamports,
-        slippage: (intent.slippageBps ?? 100) / 100,
+        atoms: intent.amountLamports,
+        slippageBps: intent.slippageBps ?? 100,
       });
       return { instructions: ixs, signers: [], label: "sell" };
     }

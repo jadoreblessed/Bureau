@@ -7,21 +7,32 @@ import {
   VersionedTransaction,
   type TransactionInstruction,
 } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { PumpSdk } from "@pump-fun/pump-sdk";
+import { TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } from "@solana/spl-token";
+import BN from "bn.js";
+import {
+  OnlinePumpSdk,
+  PumpSdk,
+  canonicalPumpPoolPdaWithQuote,
+  getBuyTokenAmountFromSolAmount,
+  getSellSolAmountFromTokenAmount,
+  type BondingCurve,
+  type SharingConfig,
+} from "@pump-fun/pump-sdk";
 import { PUMP, WSOL_MINT, config } from "../config.js";
 import { connection, payer, pk } from "./rpc.js";
 import { log } from "../logger.js";
 import { retry } from "../util/retry.js";
 
 /**
- * Adapter over @pump-fun/pump-sdk.
+ * Adapter over @pump-fun/pump-sdk (4.x).
  *
- * The call shapes below follow Pump's public instruction docs
- * (CREATOR_FEE_SHARING.md). If a future SDK release renames something, this
- * is the only file that needs touching — nothing else imports the SDK.
+ * The SDK splits into an offline instruction builder (PumpSdk) and a reader
+ * that talks to the chain (OnlinePumpSdk). If a future SDK release renames
+ * something, this is the only file that needs touching — nothing else
+ * imports the SDK.
  */
-export const sdk = new PumpSdk(connection);
+export const sdk = new PumpSdk();
+export const online = new OnlinePumpSdk(connection);
 
 export const PUMP_PROGRAM = pk(PUMP.program);
 export const PUMP_FEES_PROGRAM = pk(PUMP.fees);
@@ -35,6 +46,78 @@ export function sharingConfigPda(mint: PublicKey): PublicKey {
 /** PDA `[b"bonding-curve", mint]` on the Pump program. */
 export function bondingCurvePda(mint: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync([Buffer.from("bonding-curve"), mint.toBuffer()], PUMP_PROGRAM)[0];
+}
+
+async function fetchSharingConfig(address: PublicKey): Promise<SharingConfig | null> {
+  const info = await connection.getAccountInfo(address, "confirmed").catch(() => null);
+  return info ? sdk.decodeSharingConfig(info) : null;
+}
+
+/** The token program that owns a mint (Pump coins may be classic SPL or Token-2022). */
+async function tokenProgramOf(mint: PublicKey): Promise<PublicKey> {
+  const info = await connection.getAccountInfo(mint, "confirmed");
+  if (!info) throw new Error(`mint ${mint.toBase58()} not found`);
+  return info.owner;
+}
+
+/** Tokens out for a SOL budget, leaving room for slippage: the budget is the cap, the amount is the floor. */
+const withSlippage = (lamports: BN, slippageBps: number) => lamports.muln(10_000 - slippageBps).divn(10_000);
+
+/** Create (+ optional dev buy in the same transaction) for a fresh SOL-paired coin. */
+async function createIxs(a: {
+  creator: PublicKey; user: PublicKey; mint: PublicKey; name: string; symbol: string; uri: string;
+  devBuyLamports: number; slippageBps: number;
+}): Promise<TransactionInstruction[]> {
+  const base = { mint: a.mint, name: a.name, symbol: a.symbol, uri: a.uri, creator: a.creator, user: a.user };
+  if (a.devBuyLamports <= 0) return [await sdk.createInstruction(base)];
+  const [global, feeConfig] = await Promise.all([online.fetchGlobal(), online.fetchFeeConfig().catch(() => null)]);
+  const solAmount = new BN(a.devBuyLamports);
+  const amount = getBuyTokenAmountFromSolAmount({
+    global, feeConfig, mintSupply: null, bondingCurve: null,
+    amount: withSlippage(solAmount, a.slippageBps), quoteMint: pk(WSOL_MINT),
+  });
+  return sdk.createAndBuyInstructions({ ...base, global, amount, solAmount });
+}
+
+interface LiveCurve { curveInfo: import("@solana/web3.js").AccountInfo<Buffer>; bondingCurve: BondingCurve }
+/** A coin still on its bonding curve. Graduated coins trade on the AMM, which is not wired here. */
+async function liveCurve(mint: PublicKey): Promise<LiveCurve> {
+  const curveInfo = await connection.getAccountInfo(bondingCurvePda(mint), "confirmed");
+  if (!curveInfo) throw new Error("no bonding curve: the coin has graduated and AMM trades are not supported yet");
+  const bondingCurve = sdk.decodeBondingCurve(curveInfo);
+  if (bondingCurve.complete) throw new Error("bonding curve is complete: the coin is migrating to the AMM");
+  return { curveInfo, bondingCurve };
+}
+
+/** Buy `lamports` worth of a curve coin for `user`. */
+export async function buyInstructionsFor(opts: { mint: PublicKey; user: PublicKey; lamports: number; slippageBps: number }) {
+  const [{ curveInfo, bondingCurve }, global, feeConfig, tokenProgram] = await Promise.all([
+    liveCurve(opts.mint), online.fetchGlobal(), online.fetchFeeConfig().catch(() => null), tokenProgramOf(opts.mint),
+  ]);
+  const solAmount = new BN(opts.lamports);
+  const amount = getBuyTokenAmountFromSolAmount({
+    global, feeConfig, mintSupply: bondingCurve.tokenTotalSupply, bondingCurve,
+    amount: withSlippage(solAmount, opts.slippageBps), quoteMint: bondingCurve.quoteMint,
+  });
+  const ata = getAssociatedTokenAddressSync(opts.mint, opts.user, true, tokenProgram);
+  const ataInfo = await connection.getAccountInfo(ata, "confirmed").catch(() => null);
+  return sdk.buyInstructions({
+    global, bondingCurveAccountInfo: curveInfo, bondingCurve, associatedUserAccountInfo: ataInfo,
+    mint: opts.mint, user: opts.user, amount, solAmount, slippage: opts.slippageBps / 100, tokenProgram,
+  });
+}
+
+/** Sell `atoms` of a curve coin held by `user`. */
+export async function sellInstructionsFor(opts: { mint: PublicKey; user: PublicKey; atoms: number; slippageBps: number }) {
+  const [{ curveInfo, bondingCurve }, global, feeConfig, tokenProgram] = await Promise.all([
+    liveCurve(opts.mint), online.fetchGlobal(), online.fetchFeeConfig().catch(() => null), tokenProgramOf(opts.mint),
+  ]);
+  const amount = new BN(opts.atoms);
+  const solAmount = getSellSolAmountFromTokenAmount({ global, feeConfig, mintSupply: bondingCurve.tokenTotalSupply, bondingCurve, amount });
+  return sdk.sellInstructions({
+    global, bondingCurveAccountInfo: curveInfo, bondingCurve, mint: opts.mint, user: opts.user,
+    amount, solAmount, slippage: opts.slippageBps / 100, tokenProgram, mayhemMode: bondingCurve.isMayhemMode,
+  });
 }
 
 export interface Shareholder {
@@ -111,29 +194,16 @@ export interface CreateTokenArgs {
  */
 export async function buildCreateTx(args: CreateTokenArgs): Promise<{ transaction: string; mint: string }> {
   const creator = pk(args.creator);
-  const ixs: TransactionInstruction[] = await sdk.createInstructions({
+  const ixs = await createIxs({
     creator,
+    user: creator,
     mint: args.mint.publicKey,
     name: args.name,
     symbol: args.symbol,
     uri: args.metadataUri,
-    user: creator,
+    devBuyLamports: args.devBuyLamports,
+    slippageBps: args.slippageBps,
   });
-
-  if (args.devBuyLamports > 0) {
-    const global = await sdk.fetchGlobal();
-    const buyIxs: TransactionInstruction[] = await sdk.buyInstructions({
-      global,
-      bondingCurveAccountInfo: null,  // fresh curve: the create in this same tx makes it
-      bondingCurve: null,
-      associatedUserAccountInfo: null,
-      mint: args.mint.publicKey,
-      user: creator,
-      solAmount: args.devBuyLamports,
-      slippage: args.slippageBps / 100,
-    });
-    ixs.push(...buyIxs);
-  }
 
   const { blockhash } = await connection.getLatestBlockhash("confirmed");
   const msg = new TransactionMessage({
@@ -180,23 +250,24 @@ export async function lockFeeShares(opts: {
   if (total !== 10_000) throw new Error(`refusing to lock shares totalling ${total} bps`);
 
   // 1. opt in. Calling it twice is a no-op, so this is safe to retry.
-  const createIxs: TransactionInstruction[] = await sdk.createFeeSharingConfigInstructions({
+  const createIx = await sdk.createFeeSharingConfig({
     creator: opts.creator.publicKey,
     mint,
-    pool: opts.graduated ? await sdk.poolPda(mint, quoteMint) : null,
+    pool: opts.graduated ? canonicalPumpPoolPdaWithQuote(mint, quoteMint) : null,
   });
-  signatures.push(await sendIxs(createIxs, [opts.creator], "create_fee_sharing_config"));
+  signatures.push(await sendIxs([createIx], [opts.creator], "create_fee_sharing_config"));
 
   // 2. the one-time write. After this Pump sets admin_revoked = true.
-  const updateIxs: TransactionInstruction[] = await sdk.updateFeeSharesV2Instructions({
+  const updateIx = await sdk.updateFeeSharesV2({
     authority: opts.creator.publicKey,
     mint,
     currentShareholders: [opts.creator.publicKey],
     newShareholders: opts.shareholders.map((s) => ({ address: pk(s.address), shareBps: s.shareBps })),
     quoteMint,
     quoteTokenProgram: TOKEN_PROGRAM_ID,
+    bondingCurveComplete: Boolean(opts.graduated),
   });
-  signatures.push(await sendIxs(updateIxs, [opts.creator], "update_fee_shares_v2"));
+  signatures.push(await sendIxs([updateIx], [opts.creator], "update_fee_shares_v2"));
 
   log.info({ mint: opts.mint, sharingConfig: sharingConfig.toBase58() }, "creator fee split locked on chain");
   return { sharingConfig: sharingConfig.toBase58(), signatures };
@@ -214,13 +285,13 @@ export interface FeeLockState {
  */
 export async function readFeeLock(mint: string): Promise<FeeLockState> {
   const address = sharingConfigPda(pk(mint));
-  const cfg = await sdk.fetchFeeSharingConfig(address).catch(() => null);
+  const cfg = await fetchSharingConfig(address).catch(() => null);
   if (!cfg) return { exists: false, locked: false, shareholders: [] };
   return {
     exists: true,
     // Pump revokes the admin after the one-time update; that is the lock.
     locked: Boolean(cfg.adminRevoked),
-    shareholders: (cfg.shareholders ?? []).map((s: { address: PublicKey; shareBps: number }) => ({
+    shareholders: (cfg.shareholders ?? []).map((s) => ({
       address: s.address.toBase58(),
       shareBps: s.shareBps,
     })),
@@ -253,23 +324,23 @@ export async function sweepAndDistribute(opts: {
   // Graduated coins accrue fees on the AMM side; move those across first.
   if (opts.graduated) {
     try {
-      const ixs: TransactionInstruction[] = await sdk.transferCreatorFeesToPumpV2Instructions({
+      const ix = await sdk.transferCreatorFeesToPumpV2({
         payer: payer.publicKey,
         mint,
         quoteMint,
         quoteTokenProgram: TOKEN_PROGRAM_ID,
       });
-      if (ixs.length) signatures.push(await sendIxs(ixs, [], "transfer_creator_fees_to_pump_v2"));
+      signatures.push(await sendIxs([ix], [], "transfer_creator_fees_to_pump_v2"));
     } catch (err) {
       log.warn({ err, mint: opts.mint }, "AMM fee sweep skipped");
     }
   }
 
   const address = sharingConfigPda(mint);
-  const cfg = await sdk.fetchFeeSharingConfig(address).catch(() => null);
+  const cfg = await fetchSharingConfig(address).catch(() => null);
   if (!cfg) return { signatures, distributed: false };
 
-  const ixs: TransactionInstruction[] = await sdk.distributeCreatorFeesV2Instructions({
+  const ix = await sdk.distributeCreatorFeesV2({
     mint,
     sharingConfig: cfg,
     sharingConfigAddress: address,
@@ -278,9 +349,7 @@ export async function sweepAndDistribute(opts: {
     shouldInitializeAta: true,
     quoteTokenProgram: TOKEN_PROGRAM_ID,
   });
-  if (!ixs.length) return { signatures, distributed: false };
-
-  signatures.push(await sendIxs(ixs, [], "distribute_creator_fees_v2"));
+  signatures.push(await sendIxs([ix], [], "distribute_creator_fees_v2"));
   return { signatures, distributed: true };
 }
 
@@ -321,29 +390,16 @@ export interface CreateCoinArgs {
  * The agent wallet pays, having been funded by the dev beforehand.
  */
 export async function createCoin(args: CreateCoinArgs): Promise<{ mint: string; signature: string }> {
-  const ixs: TransactionInstruction[] = await sdk.createInstructions({
+  const ixs = await createIxs({
     creator: args.creator.publicKey,
+    user: args.creator.publicKey,
     mint: args.mint.publicKey,
     name: args.name,
     symbol: args.symbol,
     uri: args.metadataUri,
-    user: args.creator.publicKey,
+    devBuyLamports: args.devBuyLamports,
+    slippageBps: args.slippageBps,
   });
-
-  if (args.devBuyLamports > 0) {
-    const global = await sdk.fetchGlobal();
-    const buyIxs: TransactionInstruction[] = await sdk.buyInstructions({
-      global,
-      bondingCurveAccountInfo: null,
-      bondingCurve: null,
-      associatedUserAccountInfo: null,
-      mint: args.mint.publicKey,
-      user: args.creator.publicKey,
-      solAmount: args.devBuyLamports,
-      slippage: args.slippageBps / 100,
-    });
-    ixs.push(...buyIxs);
-  }
 
   const signature = await retry(
     async () => {

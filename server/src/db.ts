@@ -27,7 +27,7 @@ pool.on("error", (err) => log.error({ err }, "idle postgres client errored"));
 
 export type Row = Record<string, unknown>;
 
-export async function query<T extends Row = Row>(text: string, params: unknown[] = []) {
+export async function query<T extends object = Row>(text: string, params: unknown[] = []) {
   const started = Date.now();
   try {
     const res = await pool.query(text, params);
@@ -41,13 +41,13 @@ export async function query<T extends Row = Row>(text: string, params: unknown[]
 }
 
 /** First row or null. */
-export async function one<T extends Row = Row>(text: string, params: unknown[] = []): Promise<T | null> {
+export async function one<T extends object = Row>(text: string, params: unknown[] = []): Promise<T | null> {
   const { rows } = await query<T>(text, params);
   return rows[0] ?? null;
 }
 
 /** First row, or throw — for reads that must exist. */
-export async function must<T extends Row = Row>(text: string, params: unknown[] = []): Promise<T> {
+export async function must<T extends object = Row>(text: string, params: unknown[] = []): Promise<T> {
   const row = await one<T>(text, params);
   if (!row) throw new Error("expected exactly one row, got none");
   return row;

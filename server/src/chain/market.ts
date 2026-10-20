@@ -1,5 +1,5 @@
 import { connection, pk } from "./rpc.js";
-import { sdk, bondingCurvePda } from "./pump.js";
+import { online, bondingCurvePda } from "./pump.js";
 import { log } from "../logger.js";
 import { withTimeout, retry } from "../util/retry.js";
 
@@ -46,13 +46,13 @@ export async function solUsdPrice(): Promise<number> {
 /** Bonding curve progress and reserves, read from the chain. */
 export async function curveState(mint: string): Promise<{ bondingPct: number; graduated: boolean; reserveLamports: number }> {
   try {
-    const curve = await retry(() => sdk.fetchBondingCurve(pk(mint)), { label: "fetchBondingCurve", attempts: 2 });
+    const curve = await retry(() => online.fetchBondingCurve(pk(mint)), { label: "fetchBondingCurve", attempts: 2 });
     if (!curve) return { bondingPct: 100, graduated: true, reserveLamports: 0 };
-    const complete = Boolean((curve as { complete?: boolean }).complete);
-    const realSol = Number((curve as { realSolReserves?: bigint }).realSolReserves ?? 0n);
-    const virtualSol = Number((curve as { virtualSolReserves?: bigint }).virtualSolReserves ?? 0n);
-    const realToken = Number((curve as { realTokenReserves?: bigint }).realTokenReserves ?? 0n);
-    const initialToken = Number((curve as { tokenTotalSupply?: bigint }).tokenTotalSupply ?? 0n);
+    const complete = curve.complete;
+    const realSol = Number(curve.realQuoteReserves.toString());
+    const virtualSol = Number(curve.virtualQuoteReserves.toString());
+    const realToken = Number(curve.realTokenReserves.toString());
+    const initialToken = Number(curve.tokenTotalSupply.toString());
     const sold = initialToken > 0 ? 1 - realToken / initialToken : 0;
     return {
       bondingPct: complete ? 100 : Math.max(0, Math.min(99, Math.round(sold * 100))),
