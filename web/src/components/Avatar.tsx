@@ -32,7 +32,7 @@ function shapePoints(kind: number, r: () => number, n: number) {
 
 export const Avatar = memo(function Avatar({ seed, label, image, className = "", dots = 260 }: { seed: number; label?: string; image?: string; className?: string; dots?: number }) {
   const src = image ?? sigil(seed, dots, label);
-  return (<div className={`ava ${className}`}><img src={src} alt="" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>);
+  return (<div className={`ava ${className}`}><img src={src} alt="" decoding="async" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>);
 });
 
 /* Drawn once per (seed, dots, label) into a canvas and cached as an image:

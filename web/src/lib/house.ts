@@ -1,15 +1,9 @@
 // BUREAU's own house agents: the ones the home page leads with.
 // Same rows are seeded into the backend (server/scripts/seed.ts); keep the two in step.
-import clerk from "../assets/agents/h_clerk.webp";
-import halc from "../assets/agents/h_halc.webp";
-import saint from "../assets/agents/h_saint.webp";
-import moth from "../assets/agents/h_moth.webp";
-import stat from "../assets/agents/h_static.webp";
-import fndry from "../assets/agents/h_fndry.webp";
-import rook from "../assets/agents/h_rook.webp";
-import fox from "../assets/agents/h_fox.webp";
-import tide from "../assets/agents/h_tide.webp";
-import monk from "../assets/agents/h_monk.webp";
+// Covers are served as separate files from public/agents/ (lazy-loaded), not inlined into index.html.
+const cover = (id: string) => `/agents/${id}.webp`;
+const clerk = cover("clerk"), halc = cover("halc"), saint = cover("saint"), moth = cover("moth"), stat = cover("static");
+const fndry = cover("fndry"), rook = cover("rook"), fox = cover("fox"), tide = cover("tide"), monk = cover("monk");
 
 export interface HouseRow {
   name: string; ticker: string; kind: string; pair: string; state: string;
