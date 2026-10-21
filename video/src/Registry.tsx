@@ -197,7 +197,6 @@ export const Registry: React.FC = () => {
             </div>
           </div>
           <div style={{ marginTop: 34, fontFamily: mono, fontSize: 22, letterSpacing: "0.32em", color: C.ice, opacity: interpolate(f, [498, 514], [0, 1], clamp) }}>EVERY COIN GETS ITS OWN AGENT</div>
-          <div style={{ marginTop: 16, fontFamily: mono, fontSize: 20, letterSpacing: "0.18em", color: C.dim, opacity: interpolate(f, [504, 520], [0, 1], clamp) }}>@bureau_sol</div>
         </AbsoluteFill>
       )}
 
