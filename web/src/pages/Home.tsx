@@ -1,6 +1,6 @@
 import { Link, go } from "../lib/router";
 import {
-  AGENTS, ECONOMICS, FAMILIES, KINDS, LOOP, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, ago,
+  AGENTS, CONCEPTS, ECONOMICS, FAMILIES, KINDS, LOOP, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, ago,
 } from "../lib/data";
 import { launched, useStore } from "../lib/store";
 import { useFeed, useLiveAgents, useStats, type Stats } from "../lib/api";
@@ -43,7 +43,7 @@ export default function Home({ introDone }: { introDone: boolean }) {
   const mine = useStore(launched);
   const live = useLiveAgents(10);
   const stats = useStats();
-  const top = [...mine, ...(live ?? AGENTS)].slice(0, 10);
+  const top = [...mine, ...(live ?? AGENTS), ...CONCEPTS].slice(0, 15);
   const kindCount = (id: string) => [...mine, ...AGENTS].filter((a) => a.kind === id).length;
 
   return (

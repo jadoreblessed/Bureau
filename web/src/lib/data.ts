@@ -171,15 +171,16 @@ const pairCount = (g: Pair["group"]) => PAIRS.filter((p) => p.group === g).lengt
 export const PAIR_TOTALS = { all: PAIRS.length, stocks: pairCount("stock"), crypto: pairCount("crypto"), pump: pairCount("pump"), stable: pairCount("stable") };
 
 /* ------------------------------------------------------------ agents */
-export type Status = "awake" | "asleep-fees" | "asleep-floor" | "paused" | "halted";
+export type Status = "awake" | "asleep-fees" | "asleep-floor" | "paused" | "halted" | "preview";
 export const STATUS_LABEL: Record<Status, string> = {
   awake: "Awake",
   "asleep-fees": "Asleep · fees",
   "asleep-floor": "Asleep · <$6K",
   paused: "Paused",
   halted: "Halted",
+  preview: "Preview",
 };
-export const statusClass = (s: Status) => (s === "awake" ? "awake" : s === "paused" ? "paused" : s === "halted" ? "halted" : "asleep");
+export const statusClass = (s: Status) => (s === "awake" ? "awake" : s === "paused" ? "paused" : s === "halted" ? "halted" : s === "preview" ? "preview" : "asleep");
 
 export interface Persona { role: string; traits: string[]; drive: string; quote: string; mission: string; missionGoal: string; missionTarget: number; missionNow: number }
 export interface Agent {
@@ -212,6 +213,10 @@ export interface Agent {
   instructions?: string;
   createdAt?: number;
   ageLabel?: string;
+  /** concept preview: no coin, no wallet, never runs */
+  concept?: boolean;
+  /** sample lines in its voice (concepts only) */
+  lines?: string[];
 }
 
 import { HOUSE, type HouseRow } from "./house";
@@ -243,6 +248,14 @@ function fromHouse(r: HouseRow, i: number): Agent {
   };
 }
 export const AGENTS: Agent[] = HOUSE.map(fromHouse);
+
+import { ROSTER, type ConceptRow } from "./roster";
+/** Concept previews: listed after the real agents, labelled "Preview", with no coin and no figures. */
+function fromConcept(r: ConceptRow, i: number): Agent {
+  const a = fromHouse({ ...r, state: "", image: r.image ?? "" }, 100 + i);
+  return { ...a, status: "preview", image: r.image, concept: true, lines: r.lines, persona: { ...a.persona, traits: r.traits } };
+}
+export const CONCEPTS: Agent[] = ROSTER.map(fromConcept);
 
 
 /* ------------------------------------------------------------ feed (live, from /api/feed) */

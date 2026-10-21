@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { AGENTS, type Agent } from "./data";
+import { AGENTS, CONCEPTS, type Agent } from "./data";
 import { useLiveAgents } from "./api";
 
 /* tiny external store */
@@ -33,10 +33,10 @@ export function updateLaunched(id: string, patch: Partial<Agent>) { launched.set
 export function useAllAgents() {
   const mine = useStore(launched);
   const live = useLiveAgents(100);
-  return [...mine, ...(live ?? AGENTS)];
+  return [...mine, ...(live ?? AGENTS), ...CONCEPTS];
 }
 export function findAgent(id: string, mine: Agent[]) {
-  return mine.find((a) => a.id === id) ?? AGENTS.find((a) => a.id === id);
+  return mine.find((a) => a.id === id) ?? AGENTS.find((a) => a.id === id) ?? CONCEPTS.find((a) => a.id === id);
 }
 
 /* drafts */

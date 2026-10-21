@@ -65,7 +65,8 @@ export const StatusBadge = ({ s }: { s: Agent["status"] }) => (
   <span className={`status ${statusClass(s)}`}><i />{STATUS_LABEL[s]}</span>
 );
 export const statusNote = (a: Agent) =>
-  !a.ca && !a.mine ? "not launched yet — no coin, no contract address"
+  a.concept ? "concept preview — no coin, nothing runs yet"
+  : !a.ca && !a.mine ? "not launched yet — no coin, no contract address"
   : a.status === "awake" ? (a.nextThought ? `next thought in ${a.nextThought} min` : "awake")
   : a.status === "asleep-fees" ? "asleep until its coin earns its first fees"
   : a.status === "asleep-floor" ? "asleep under its $6K market-cap floor"

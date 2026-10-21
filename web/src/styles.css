@@ -146,6 +146,8 @@ ul { list-style: none; margin: 0; padding: 0; }
 .status.asleep i { background: transparent; border: 1px solid currentColor; }
 .status.paused { color: var(--warn); }
 .status.halted { color: var(--bad); }
+.status.preview { color: var(--ice); }
+.status.preview i { background: transparent; border: 1px dashed currentColor; }
 .status.graduated { color: var(--good); }
 @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(127,178,255,.55); } 80%, 100% { box-shadow: 0 0 0 7px rgba(127,178,255,0); } }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue-2); animation: ping 1.8s var(--ease) infinite; flex: none; }

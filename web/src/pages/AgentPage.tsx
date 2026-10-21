@@ -125,6 +125,7 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
               {cluster === "devnet" && <span className="chip chip-blue">devnet</span>}
               {a.bonding >= 100 && <span className="chip chip-blue">graduated</span>}
               {a.mine && <span className="chip chip-blue">launched by you</span>}
+              {a.concept && <span className="chip">concept preview</span>}
             </div>
             <h1 className="mt-12">{a.name} <span className="mono muted" style={{ fontSize: ".42em", fontWeight: 400, letterSpacing: 0 }}>${a.ticker}</span></h1>
             <p className="muted mt-8" style={{ maxWidth: 640, fontSize: 14.5 }}>{a.description}</p>
@@ -138,7 +139,7 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
                 {cluster !== "devnet" && <a className="btn btn-sm btn-blue" href={`https://pump.fun/coin/${a.ca}`} target="_blank" rel="noreferrer">Trade</a>}
                 <a className="btn btn-sm" href={explorer(cluster, "token", a.ca)} target="_blank" rel="noreferrer">Solscan</a>
               </>
-            ) : <span className="chip">not launched yet · no contract address</span>}
+            ) : <span className="chip">{a.concept ? "concept · no coin, no contract address" : "not launched yet · no contract address"}</span>}
             {a.x && <a className="btn btn-sm btn-icon" href={`https://x.com/${a.x.replace("@", "")}`} target="_blank" rel="noreferrer" aria-label="X"><XLogo className="ic" /></a>}
             {a.tg && <a className="btn btn-sm btn-icon" href={a.tg} target="_blank" rel="noreferrer" aria-label="Telegram"><Send className="ic" /></a>}
             {a.web && <a className="btn btn-sm btn-icon" href={a.web} aria-label="Website"><Globe className="ic" /></a>}
@@ -172,10 +173,16 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
                 <div className="panel panel-p" style={{ padding: "14px 18px", borderColor: status === "awake" ? "rgba(127,178,255,.35)" : undefined }}>
                   <div className="row" style={{ fontSize: 14 }}>{status === "awake" ? <span className="live-dot" /> : <Pause className="icon" />}<span className="soft">{status === "awake" ? (a.nextThought ? `Awake. Next scheduled wake in about ${a.nextThought} min.` : "Awake.") : note1[0].toUpperCase() + note1.slice(1) + "."}</span></div>
                 </div>
-                <div>
+                {a.concept ? (
+                  <div className="panel panel-p">
+                    <div className="between"><span className="label">Sample voice</span><span className="label">written for the preview, not generated</span></div>
+                    <ul className="mt-12">{(a.lines ?? []).map((l, i) => (<li key={i} className="soft" style={{ padding: "8px 0", borderBottom: "1px dashed var(--line-2)", fontSize: 14 }}>{l}</li>))}</ul>
+                    <p className="muted mt-12" style={{ fontSize: 13 }}>This is a concept. It starts thinking for real once someone launches it with a coin.</p>
+                  </div>
+                ) : <div>
                   <div className="between" style={{ marginBottom: 10 }}><span className="label">Thinking · from its own wakes</span><span className="label">{thoughts.length ? `last ${ago(minsAgo(thoughts[thoughts.length - 1].created_at))}` : "—"}</span></div>
                   <Console thoughts={thoughts} live={status === "awake"} />
-                </div>
+                </div>}
                 <div className="grid2">
                   <div className="panel panel-p">
                     <div className="label">Mission</div>

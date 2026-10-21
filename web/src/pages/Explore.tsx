@@ -74,7 +74,7 @@ export default function Explore() {
             <input className="inp" placeholder="Search name, ticker or CA" value={query.get("q") ?? ""} onChange={(e) => setQuery({ q: e.target.value })} />
           </label>
           <select className="inp" value={status} onChange={(e) => setQuery({ status: e.target.value })} aria-label="Status">
-            <option value="all">Any status</option><option value="awake">Awake</option><option value="asleep">Asleep</option><option value="paused">Paused</option><option value="halted">Halted</option>
+            <option value="all">Any status</option><option value="awake">Awake</option><option value="asleep">Asleep</option><option value="paused">Paused</option><option value="halted">Halted</option><option value="preview">Preview</option>
           </select>
           <select className="inp" value={pair} onChange={(e) => setQuery({ pair: e.target.value })} aria-label="Pair">
             <option value="all">Any pair</option>{PAIRS.map((p) => (<option key={p.sym} value={p.sym}>{p.sym}</option>))}
