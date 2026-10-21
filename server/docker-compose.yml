@@ -4,6 +4,8 @@
 #   docker compose run --rm api node dist/util/migrate.js
 #   docker compose up -d
 #
+# BUREAU_DB in .env picks the database (bureau_mainnet on mainnet; the devnet one stays as "bureau").
+#
 # The signer is deliberately NOT published to the host: only the api and the
 # worker can reach it, over the internal network.
 
@@ -28,7 +30,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://bureau:${POSTGRES_PASSWORD:-bureau}@db:5432/bureau
+      DATABASE_URL: postgres://bureau:${POSTGRES_PASSWORD:-bureau}@db:5432/${BUREAU_DB:-bureau}
       SIGNER_URL: http://signer:8081
     depends_on:
       db: { condition: service_healthy }
@@ -41,7 +43,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://bureau:${POSTGRES_PASSWORD:-bureau}@db:5432/bureau
+      DATABASE_URL: postgres://bureau:${POSTGRES_PASSWORD:-bureau}@db:5432/${BUREAU_DB:-bureau}
       SIGNER_URL: http://signer:8081
     depends_on:
       db: { condition: service_healthy }
@@ -52,7 +54,7 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://bureau:${POSTGRES_PASSWORD:-bureau}@db:5432/bureau
+      DATABASE_URL: postgres://bureau:${POSTGRES_PASSWORD:-bureau}@db:5432/${BUREAU_DB:-bureau}
       SIGNER_HOST: 0.0.0.0
     depends_on:
       db: { condition: service_healthy }
