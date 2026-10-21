@@ -86,7 +86,9 @@ export async function agentRoutes(app: FastifyInstance) {
     try {
       const slug = (req.params as { file: string }).file.replace(/\.json$/, "");
       const a = await one<{ name: string; ticker: string; description: string; image_url: string | null; links: { x?: string; telegram?: string } }>(
-        `SELECT name, ticker, description, image_url, links FROM agents WHERE slug = $1`,
+        // the URI on chain keeps the slug the coin launched with, even if the slug changes later
+        `SELECT name, ticker, description, image_url, links FROM agents
+          WHERE slug = $1 OR metadata_uri LIKE '%/api/meta/' || $1 || '.json' LIMIT 1`,
         [slug],
       );
       if (!a) throw notFound("no such agent");
