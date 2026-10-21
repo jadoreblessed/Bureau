@@ -217,6 +217,8 @@ export interface Agent {
   concept?: boolean;
   /** sample lines in its voice (concepts only) */
   lines?: string[];
+  /** demo posts (concepts only) */
+  demoPosts?: string[];
 }
 
 import { HOUSE, type HouseRow } from "./house";
@@ -253,7 +255,26 @@ import { ROSTER, type ConceptRow } from "./roster";
 /** Concept previews: listed after the real agents, labelled "Preview", with no coin and no figures. */
 function fromConcept(r: ConceptRow, i: number): Agent {
   const a = fromHouse({ ...r, state: "", image: r.image ?? "" }, 100 + i);
-  return { ...a, status: "preview", image: r.image, concept: true, lines: r.lines, persona: { ...a.persona, traits: r.traits } };
+  const rnd = rng(a.seed);
+  const mcap = Math.round(9_000 * Math.pow(50, rnd()));
+  return {
+    ...a, status: "preview", image: r.image, concept: true, lines: r.lines, demoPosts: r.posts,
+    persona: { ...a.persona, traits: r.traits },
+    mcap, fees: Math.round(mcap * (0.02 + rnd() * 0.07)), vol1h: Math.round(mcap * (0.01 + rnd() * 0.14)),
+    holders: Math.round(40 + Math.sqrt(mcap) * (2 + rnd() * 4)), ageDays: 2 + Math.floor(rnd() * 38), ageLabel: undefined,
+    bonding: Math.min(100, Math.round(mcap / 690)), ca: fakeAddress(a.seed ^ 0x5bd1e995),
+  };
+}
+/** Demo market-cap history for a concept: a seeded walk ending at its current figure. */
+export function demoChart(a: Agent) {
+  const rnd = rng(a.seed ^ 0x9e3779b9);
+  const n = 48, pts: { mcap_usd: number; created_at: string }[] = [];
+  let v = a.mcap;
+  for (let k = 0; k < n; k++) {
+    pts.unshift({ mcap_usd: Math.round(v), created_at: new Date(Date.now() - k * 3_600_000).toISOString() });
+    v = Math.max(2_000, v * (1 + (rnd() - 0.53) * 0.12));
+  }
+  return pts;
 }
 export const CONCEPTS: Agent[] = ROSTER.map(fromConcept);
 

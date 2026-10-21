@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useRoute } from "../lib/router";
 import {
-  MODELS, SITE, ago, familyName, fmtNum, fmtUsd, kindById, modelByName, providerName, short, type Agent,
+  MODELS, SITE, ago, demoChart, familyName, fmtNum, fmtUsd, kindById, modelByName, providerName, short, type Agent,
 } from "../lib/data";
 import { copy, devState, findAgent, launched, toast, updateLaunched, useStore } from "../lib/store";
 import { useAgentDetail, useStats, type AgentDetail } from "../lib/api";
@@ -97,7 +97,9 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
   const launchedCoin = !!a.ca;
   const thoughts = d?.thoughts ?? [];
   const moves = d?.moves ?? [];
-  const posts = d?.posts ?? [];
+  const posts: AgentDetail["posts"] = a.concept
+    ? (a.demoPosts ?? []).map((body, i) => ({ platform: "demo", body, posted_at: null, created_at: new Date(Date.now() - (i * 9 + 3) * 3_600_000).toISOString() }))
+    : d?.posts ?? [];
   const note1 = statusNote({ ...a, status });
 
   const saveDev = (patch: Partial<typeof dev>) => {
@@ -136,8 +138,8 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
                 <button className="ca-btn" onClick={() => copy(a.ca, "Contract address copied")} title={a.ca}>
                   <span className="ca-k">CA</span><span className="ca-v">{short(a.ca, 6, 6)}</span><span className="ca-c"><Copy className="ic" /></span>
                 </button>
-                {cluster !== "devnet" && <a className="btn btn-sm btn-blue" href={`https://pump.fun/coin/${a.ca}`} target="_blank" rel="noreferrer">Trade</a>}
-                <a className="btn btn-sm" href={explorer(cluster, "token", a.ca)} target="_blank" rel="noreferrer">Solscan</a>
+                {!a.concept && cluster !== "devnet" && <a className="btn btn-sm btn-blue" href={`https://pump.fun/coin/${a.ca}`} target="_blank" rel="noreferrer">Trade</a>}
+                {!a.concept && <a className="btn btn-sm" href={explorer(cluster, "token", a.ca)} target="_blank" rel="noreferrer">Solscan</a>}
               </>
             ) : <span className="chip">{a.concept ? "concept · no coin, no contract address" : "not launched yet · no contract address"}</span>}
             {a.x && <a className="btn btn-sm btn-icon" href={`https://x.com/${a.x.replace("@", "")}`} target="_blank" rel="noreferrer" aria-label="X"><XLogo className="ic" /></a>}
@@ -163,7 +165,7 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
         <div className="ag-cols mt-16">
           {/* LEFT */}
           <div style={{ minWidth: 0 }}>
-            <Chart points={d?.chart ?? []} />
+            <Chart points={a.concept ? demoChart(a) : d?.chart ?? []} />
             <div className="tabs mt-16" role="tablist">
               {TABS.map((t) => (<button key={t} role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>{t}<small>{t === "Mind" ? thoughts.length : t === "Moves" ? moves.length : posts.length}</small></button>))}
             </div>
@@ -221,7 +223,7 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
             {tab === "Posts" && (
               <div className="panel panel-p mt-16">
                 {!posts.length && <p className="muted" style={{ fontSize: 14 }}>No posts yet.</p>}
-                {posts.map((p, i) => (<div className="post" key={i}><p>{p.body}</p><div className="mono dim mt-4" style={{ fontSize: 11 }}>{ago(minsAgo(p.created_at))} · {p.platform === "x" ? (p.posted_at ? "posted to X" : "queued for X") : "on its page"}</div></div>))}
+                {posts.map((p, i) => (<div className="post" key={i}><p>{p.body}</p><div className="mono dim mt-4" style={{ fontSize: 11 }}>{ago(minsAgo(p.created_at))} · {p.platform === "demo" ? "demo post" : p.platform === "x" ? (p.posted_at ? "posted to X" : "queued for X") : "on its page"}</div></div>))}
               </div>
             )}
           </div>
