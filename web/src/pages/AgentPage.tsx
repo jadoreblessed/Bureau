@@ -34,7 +34,9 @@ function Console({ thoughts, live }: { thoughts: AgentDetail["thoughts"]; live: 
   );
 }
 
-function Chart({ points }: { points: AgentDetail["chart"] }) {
+function Chart({ points: all }: { points: AgentDetail["chart"] }) {
+  // zero snapshots are reads that found no market yet, not a price of zero
+  const points = all.filter((p) => Number(p.mcap_usd) > 0);
   const W = 800, H = 220;
   if (points.length < 2) {
     return (
@@ -52,7 +54,7 @@ function Chart({ points }: { points: AgentDetail["chart"] }) {
   const chg = ((vals[vals.length - 1] / (vals[0] || 1) - 1) * 100).toFixed(1);
   return (
     <div className="panel panel-p">
-      <div className="row"><span className="label">Market cap · 7d</span><span className="mono" style={{ fontSize: 12, color: up ? "var(--good)" : "var(--bad)" }}>{up ? "+" : ""}{chg}%</span></div>
+      <div className="row"><span className="label">Market cap · 7d</span><span className="mono" style={{ fontSize: 12, color: up ? "var(--good)" : "var(--bad)" }}>{Number(chg) > 0 ? "+" : ""}{chg}%</span></div>
       <svg className="chart mt-12" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Market cap chart">
         <defs><linearGradient id="cg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#3d7bff" stopOpacity=".35" /><stop offset="1" stopColor="#3d7bff" stopOpacity="0" /></linearGradient></defs>
         {[0.25, 0.5, 0.75].map((g) => (<line key={g} x1="0" x2={W} y1={H * g} y2={H * g} stroke="rgba(255,255,255,.06)" strokeDasharray="3 5" />))}
