@@ -18,9 +18,9 @@ const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const io = Easing.bezier(0.65, 0, 0.35, 1);
 const out = Easing.bezier(0.16, 1, 0.3, 1);
 
-// the 14 cells around the centre, in a fixed shuffled order; the first 12 get agents
+// a 5x3 block whose middle three cells hold the BUREAU card, leaving exactly 12 for the agents
 const CELLS = [-2, -1, 0, 1, 2].flatMap((c) => [-1, 0, 1].map((r) => ({ c, r })))
-  .filter(({ c, r }) => c !== 0 || r !== 0)
+  .filter(({ c, r }) => r !== 0 || Math.abs(c) > 1)
   .sort((a, b) => random(`cell${a.c},${a.r}`) - random(`cell${b.c},${b.r}`))
   .slice(0, AGENTS.length)
   .map((cell, i) => ({ ...cell, id: AGENTS[i], on: 40 + i * 9 }));
@@ -110,7 +110,7 @@ export const Registry: React.FC = () => {
       {/* glow of the centre cell, which becomes the backdrop once the camera is inside it */}
       <AbsoluteFill style={{
         opacity: glow,
-        background: `radial-gradient(${CW * 1.3 * s}px ${CH * 1.6 * s}px at 50% 50%, rgba(61,123,255,.30), rgba(61,123,255,.06) 55%, transparent 75%)`,
+        background: `radial-gradient(${CW * 2.6 * s}px ${CH * 1.7 * s}px at 50% 50%, rgba(61,123,255,.30), rgba(61,123,255,.06) 55%, transparent 75%)`,
       }} />
 
       <AbsoluteFill style={{ opacity: endFade }}>
@@ -134,13 +134,13 @@ export const Registry: React.FC = () => {
         {/* centre card */}
         {card > 0 && (
           <div style={{
-            position: "absolute", left: X(cellX(0)), top: Y(cellY(0)), width: CW * s, height: CH * s, opacity: card,
+            position: "absolute", left: X(cellX(-1)), top: Y(cellY(0)), width: 3 * CW * s, height: CH * s, opacity: card,
             background: "radial-gradient(ellipse at 50% 55%, rgba(61,123,255,.28), rgba(2,4,10,.9) 75%)",
             boxShadow: `inset 0 0 0 1px rgba(127,178,255,${0.35 * cardInner})`,
           }}>
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 12 * s, opacity: cardInner }}>
-              <Mark size={34 * s} />
-              <div style={{ fontFamily: display, fontWeight: 700, fontSize: 30 * s, letterSpacing: "0.04em", color: C.ink }}>BUREAU</div>
+              <Mark size={50 * s} />
+              <div style={{ fontFamily: display, fontWeight: 700, fontSize: 46 * s, letterSpacing: "0.04em", color: C.ink }}>BUREAU</div>
             </div>
             {([["AGENT · 001", { left: 9, top: 7 }], ["SOLANA", { right: 9, top: 7 }], ["FEES 85/5/5/5", { left: 9, bottom: 7 }], ["LOCKED", { right: 9, bottom: 7 }]] as const).map(([t, pos]) => (
               <div key={t} style={{
