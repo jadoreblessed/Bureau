@@ -44,25 +44,33 @@ export async function solUsdPrice(): Promise<number> {
 }
 
 /** Bonding curve progress and reserves, read from the chain. */
-export async function curveState(mint: string): Promise<{ bondingPct: number; graduated: boolean; reserveLamports: number }> {
+export async function curveState(mint: string): Promise<{ bondingPct: number; graduated: boolean; reserveLamports: number; mcapLamports: number }> {
   try {
-    const curve = await retry(() => online.fetchBondingCurve(pk(mint)), { label: "fetchBondingCurve", attempts: 2 });
-    if (!curve) return { bondingPct: 100, graduated: true, reserveLamports: 0 };
+    const [curve, global] = await Promise.all([
+      retry(() => online.fetchBondingCurve(pk(mint)), { label: "fetchBondingCurve", attempts: 2 }),
+      online.fetchGlobal().catch(() => null),
+    ]);
+    if (!curve) return { bondingPct: 100, graduated: true, reserveLamports: 0, mcapLamports: 0 };
     const complete = curve.complete;
     const realSol = Number(curve.realQuoteReserves.toString());
     const virtualSol = Number(curve.virtualQuoteReserves.toString());
     const realToken = Number(curve.realTokenReserves.toString());
+    const virtualToken = Number(curve.virtualTokenReserves.toString());
     const initialToken = Number(curve.tokenTotalSupply.toString());
-    const sold = initialToken > 0 ? 1 - realToken / initialToken : 0;
+    // progress is measured against the tokens the curve sells, not the whole supply
+    const curveTokens = global ? Number(global.initialRealTokenReserves.toString()) : 0;
+    const sold = curveTokens > 0 ? 1 - realToken / curveTokens : 0;
     return {
       bondingPct: complete ? 100 : Math.max(0, Math.min(99, Math.round(sold * 100))),
       graduated: complete,
       reserveLamports: virtualSol || realSol,
+      // price on the curve = virtual SOL / virtual tokens; times the supply gives the market cap in lamports
+      mcapLamports: virtualToken > 0 ? Math.round((virtualSol / virtualToken) * initialToken) : 0,
     };
   } catch (err) {
     log.debug({ err, mint }, "curve read failed");
     // The curve account is gone once a coin graduates to the AMM.
-    return { bondingPct: 100, graduated: true, reserveLamports: 0 };
+    return { bondingPct: 100, graduated: true, reserveLamports: 0, mcapLamports: 0 };
   }
 }
 
@@ -83,9 +91,12 @@ export async function getMarket(mint: string): Promise<Market> {
         ? Math.round((dex.liquidityUsd / 2 / solUsd) * 1_000_000_000)
         : 0;
 
+  // No DEX listing (a fresh coin, or devnet): price the coin straight off its bonding curve.
+  const marketCapUsd = dex.marketCapUsd || (solUsd > 0 ? (curve.mcapLamports / 1e9) * solUsd : 0);
   return {
     ...dex,
     ...curve,
+    marketCapUsd,
     poolReserveLamports,
     solUsd,
   };
