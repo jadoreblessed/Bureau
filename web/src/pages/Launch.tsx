@@ -39,7 +39,7 @@ interface Form {
   x: string; tg: string; devBuy: number;
 }
 const EMPTY: Form = {
-  image: "", name: "", ticker: "", description: "", provider: "anthropic", model: "Claude Sonnet 5.5", pair: "SOL",
+  image: "", name: "", ticker: "", description: "", provider: "minimax", model: "MiniMax M3.1 Flash (free)", pair: "SOL",
   kind: "unbound", families: [], instructions: "", traits: "", influencer: false,
   powers: ["web", "payouts", "burns"], programs: [], rewardEvery: 24, rewardShare: 20, x: "", tg: "", devBuy: 0,
 };

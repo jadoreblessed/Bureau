@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState, type ReactNode, type ElementType
 import { Link } from "../lib/router";
 import { copy, toasts, useInView, useStore } from "../lib/store";
 import { useSite } from "../lib/site";
-import { phantomDeepLink, useWallet } from "../lib/wallet";
+import { phantomDeepLink, pickWallet, useWallet } from "../lib/wallet";
 import {
   type Agent, STATUS_LABEL, fmtUsd, kindById, modelByName, pairBySym, short, statusClass,
 } from "../lib/data";
@@ -131,6 +131,27 @@ export function CAButton({ compact = false }: { compact?: boolean }) {
 }
 
 /* ------------------------------------------------------------ wallet button */
+/** Wallet picker: every Solana wallet the browser has registered through the Wallet Standard. Mounted once, in the app shell. */
+export function WalletPicker() {
+  const w = useWallet();
+  if (!w.picking) return null;
+  return (
+    <div className="modal-bg" onClick={() => pickWallet(null)}>
+      <div className="modal corners" style={{ position: "relative", maxWidth: 380 }} onClick={(e) => e.stopPropagation()}>
+        <div className="tag blue">Connect a wallet</div>
+        <div className="stack mt-16" style={{ gap: 8 }}>
+          {w.list.map((x) => (
+            <button key={x.name} type="button" className="btn btn-block" style={{ justifyContent: "flex-start", gap: 12, textTransform: "none", letterSpacing: 0 }} onClick={() => pickWallet(x.name)}>
+              <img src={x.icon} alt="" width={22} height={22} style={{ borderRadius: 5 }} />{x.name}
+            </button>
+          ))}
+        </div>
+        <button type="button" className="btn btn-ghost btn-sm btn-block mt-12" onClick={() => pickWallet(null)}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 export function WalletButton({ block = false, size = "sm" }: { block?: boolean; size?: "sm" | "md" }) {
   const w = useWallet();
   const [open, setOpen] = useState(false);
@@ -142,7 +163,7 @@ export function WalletButton({ block = false, size = "sm" }: { block?: boolean; 
     return () => document.removeEventListener("mousedown", off);
   }, [open]);
   const cls = `btn ${size === "sm" ? "btn-sm" : ""} ${block ? "btn-block" : ""}`;
-  if (!w.address && !w.hasPhantom) {
+  if (!w.address && !w.hasWallet) {
     const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     return (
       <a className={`${cls} btn-blue wallet-btn`} href={mobile ? phantomDeepLink() : "https://phantom.app/download"} target="_blank" rel="noreferrer">

@@ -6,7 +6,7 @@ import { initWallet } from "./lib/wallet";
 import { initSmoothScroll } from "./lib/smooth";
 initSmoothScroll();
 import { Footer, Header, Preloader } from "./components/Shell";
-import { Toasts } from "./components/ui";
+import { Toasts, WalletPicker } from "./components/ui";
 import Home from "./pages/Home";
 import Explore from "./pages/Explore";
 import AgentPage from "./pages/AgentPage";
@@ -41,6 +41,7 @@ function App() {
       <div key={route.path}>{page}</div>
       <Footer />
       <Toasts />
+      <WalletPicker />
     </>
   );
 }
