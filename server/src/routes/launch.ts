@@ -9,7 +9,7 @@ import { badRequest, conflict, disabled, notFound, send, unauthorized } from "..
 import { createAgentWallet } from "../chain/wallet.js";
 import { ensurePolicy } from "../policy/context.js";
 import { lamportsToSol } from "../util/money.js";
-import { connection } from "../chain/rpc.js";
+import { connection, payer } from "../chain/rpc.js";
 
 /**
  * Launching a coin.
@@ -66,8 +66,14 @@ export async function launchRoutes(app: FastifyInstance) {
       let slug = slugify(body.name, ticker);
       if (await one(`SELECT 1 FROM agents WHERE slug = $1`, [slug])) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
 
-      // Network fees plus the rent the mint and its accounts need, plus the buy.
-      const overhead = 30_000_000 + 10_000_000;
+      // The platform payer signs the fee lock right after the coin is created; without SOL on it
+      // the coin would launch with its fee route unlocked, so refuse before the dev sends anything.
+      if ((await connection.getBalance(payer.publicKey, "confirmed")) < 5_000_000)
+        throw conflict("launches are paused: the platform wallet needs topping up");
+
+      // Rent for the mint and its accounts plus network fees (~0.012 SOL measured), with headroom
+      // left in the agent wallet for gas, plus the buy.
+      const overhead = 20_000_000;
       const quoted = overhead + devBuy;
 
       const agentId = await tx(async (c) => {

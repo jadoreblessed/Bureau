@@ -171,7 +171,7 @@ app.post("/launch", async (req, reply) => {
 
   // The wallet must actually hold what the dev was quoted; we never front it.
   const balance = await connection.getBalance(creator.publicKey, "confirmed");
-  const needed = 25_000_000 + Number(row.dev_buy_lamports);
+  const needed = 15_000_000 + Number(row.dev_buy_lamports);
   if (balance < needed) {
     return reply.code(409).send({ error: "agent wallet is not funded yet", balance, needed });
   }

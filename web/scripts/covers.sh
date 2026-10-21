@@ -4,8 +4,8 @@
 #   bash web/scripts/covers.sh <folder>
 #
 # Name each image after the agent's ticker (abacus.png, $KETTLE.jpg, Herald.webp …; any case,
-# png/jpg/webp/avif/heic). Each one is cropped to the 3:2 card frame, saved as
-# web/public/agents/<ticker>.webp at 768x512, committed, pushed and deployed to the server.
+# png/jpg/webp/avif/heic). Each one is scaled to fit 768x768 (cards crop it themselves), saved as
+# web/public/agents/<ticker>.webp, committed, pushed and deployed to the server.
 # Conversion runs on the server (ImageMagick), so nothing needs installing here.
 # DRY=1 writes the files but skips the commit and deploy.
 set -euo pipefail
@@ -24,7 +24,7 @@ for f in "$src"/*.{png,jpg,jpeg,webp,avif,heic}; do
   if ! grep -qx "$id" <<<"$known"; then echo "skip $name: no agent with ticker '$id'"; continue; fi
   ext="${name##*.}"
   scp -q "$f" "blxssed:$tmp/$id.$ext"
-  ssh blxssed "convert '$tmp/$id.$ext' -auto-orient -resize 768x512^ -gravity center -extent 768x512 -quality 82 '$tmp/$id.webp'"
+  ssh blxssed "convert '$tmp/$id.$ext' -auto-orient -resize 768x768 -quality 82 '$tmp/$id.webp'"
   scp -q "blxssed:$tmp/$id.webp" "$out/$id.webp"
   echo "ok   $name -> web/public/agents/$id.webp"
   added+=("web/public/agents/$id.webp")

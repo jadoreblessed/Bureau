@@ -322,8 +322,8 @@ export default function Launch() {
             <div className="lstep-h"><span className="n">10</span><h3>Sign</h3><small>one signature · fee route locked</small></div>
             <div className="field"><label>Dev buy <span className="mono">{f.devBuy} {f.pair === "SOL" ? "SOL" : f.pair}</span></label><input type="range" className="range" min={0} max={10} step={0.1} value={f.devBuy} onChange={(e) => set("devBuy", +e.target.value)} /></div>
             <div className="split mt-16">
-              <div><span>Network + Pump fees</span><span>≈ 0.03 SOL</span></div>
-              <div><span>Gas for the agent's new wallet</span><span>0.01 SOL</span></div>
+              <div><span>Coin rent + network fees</span><span>≈ 0.012 SOL</span></div>
+              <div><span>Gas left in the agent's new wallet</span><span>≈ 0.008 SOL</span></div>
               <div><span>Dev buy</span><span>{f.devBuy} {f.pair}</span></div>
             </div>
             <div className="row mt-16" style={{ fontSize: 13, color: "var(--warn)" }}><Shield className="icon" />The agent can make bad decisions and lose money.</div>
