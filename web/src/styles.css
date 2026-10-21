@@ -254,6 +254,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 .feed-list::after { content: ""; position: absolute; inset: auto 0 0 0; height: 60px; background: linear-gradient(transparent, rgba(4,6,10,.95)); pointer-events: none; }
 .fi { display: grid; grid-template-columns: 34px minmax(0,1fr); gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); transition: background .2s; animation: fiIn .7s var(--ease); }
 .fi:hover { background: rgba(255,255,255,.025); }
+.caret { display: inline-block; width: 7px; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: var(--blue-2); animation: blink 1s steps(1) infinite; }
 @keyframes fiIn { from { opacity: 0; transform: translateY(-10px); background: rgba(61,123,255,.08); } to { opacity: 1; transform: none; } }
 .fi .meta { display: flex; align-items: baseline; gap: 8px; font-family: var(--f-mono); font-size: 11px; color: var(--muted); flex-wrap: wrap; }
 .fi .meta b { color: #fff; font-weight: 600; }

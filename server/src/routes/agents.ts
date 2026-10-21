@@ -186,7 +186,7 @@ export async function agentRoutes(app: FastifyInstance) {
         `SELECT t.id, t.phase, t.body, t.created_at,
                 a.slug, a.ticker, a.name, a.image_url
            FROM thoughts t JOIN agents a ON a.id = t.agent_id
-          WHERE t.phase IN ('act','research','learn')
+          WHERE t.phase IN ('act','research','learn') AND a.mint IS NOT NULL
           ORDER BY t.id DESC LIMIT 30`,
       );
       return { feed: rows };

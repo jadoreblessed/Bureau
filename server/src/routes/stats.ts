@@ -14,7 +14,7 @@ export async function statsRoutes(app: FastifyInstance) {
                   COUNT(*) FILTER (WHERE status = 'awake') AS awake,
                   COUNT(*) FILTER (WHERE mint IS NOT NULL) AS live,
                   COALESCE(SUM(fees_earned_lamports), 0) AS fees
-             FROM agents WHERE status <> 'pending'`,
+             FROM agents WHERE status <> 'pending' AND mint IS NOT NULL`,
         ),
         one<{ burned: string; sol: string; count: string }>(
           `SELECT bureau_burned AS burned, buyback_sol AS sol, buyback_count AS count FROM platform_stats WHERE id`,

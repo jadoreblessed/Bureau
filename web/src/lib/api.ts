@@ -116,7 +116,8 @@ export function useApiAgent(slug: string, skip: boolean): Agent | null | undefin
 export function useLiveAgents(limit = 10): Agent[] | null {
   return useFetch(`/agents?sort=awake&limit=${limit}`, (j) => {
     const list = (j as { agents?: ApiAgent[] }).agents;
-    return list?.length ? list.map(toAgent) : null;
+    // only agents whose coin exists; the unlaunched house rows stay off the site
+    return list ? list.map(toAgent).filter((a) => a.ca) : null;
   }, 60_000);
 }
 

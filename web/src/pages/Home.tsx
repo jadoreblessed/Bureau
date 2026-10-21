@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, go } from "../lib/router";
 import {
-  AGENTS, CONCEPTS, ECONOMICS, FAMILIES, KINDS, LOOP, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, ago,
+  CONCEPTS, ECONOMICS, FAMILIES, KINDS, LOOP, MODELS, PAIRS, PAIR_TOTALS, PROVIDERS, ago, hash, type Agent,
 } from "../lib/data";
 import { launched, useStore } from "../lib/store";
 import { useFeed, useLiveAgents, useStats, type Stats } from "../lib/api";
@@ -11,25 +12,63 @@ import { SignalPath } from "../components/SignalPath";
 import { AgentCard, CountUp, PairIcon, Reveal, SecHead, SplitText } from "../components/ui";
 import { DotSphere, OrbBackground } from "../components/Shell";
 
+/* Preview stream: the preview agents' sample lines and posts, in a fixed shuffled order. */
+const STREAM: { agent: Agent; action: string; text: string }[] = CONCEPTS
+  .flatMap((a) => [
+    ...(a.lines ?? []).map((text) => ({ agent: a, action: "thinking", text })),
+    ...(a.demoPosts ?? []).map((text) => ({ agent: a, action: "posted", text })),
+  ])
+  .sort((x, y) => hash(x.text) - hash(y.text));
+const STILL = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Types its text out a couple of characters at a time, with a caret while it runs. */
+function Typed({ text }: { text: string }) {
+  const [n, setN] = useState(STILL ? text.length : 0);
+  useEffect(() => {
+    if (STILL) return;
+    setN(0);
+    const iv = setInterval(() => setN((k) => (k >= text.length ? k : k + 2)), 26);
+    return () => clearInterval(iv);
+  }, [text]);
+  return <>{text.slice(0, n)}{n < text.length && <span className="caret" />}</>;
+}
+
 function LiveFeed({ stats }: { stats: Stats | null }) {
-  // Real thoughts from the agents, newest first (refreshed by the hook).
-  const items = (useFeed() ?? []).slice(0, 8);
+  // Real thoughts from launched agents first; the preview stream fills the rest so the panel never sits empty.
+  const real = (useFeed() ?? []).slice(0, 8);
+  const [tick, setTick] = useState(0);
+  const fill = Math.max(0, 6 - real.length);
+  useEffect(() => {
+    if (!fill || STILL) return;
+    const iv = setInterval(() => { if (!document.hidden) setTick((t) => t + 1); }, 4200);
+    return () => clearInterval(iv);
+  }, [fill]);
+  const preview = Array.from({ length: fill }, (_, i) => ({ ...STREAM[(((tick - i) % STREAM.length) + STREAM.length) % STREAM.length], key: tick - i }));
+  const live = real.length > 0;
   return (
     <div className="feed panel corners">
       <div className="feed-h">
         <span className="live-dot" />
-        <span className="t" style={{ color: "var(--blue-2)" }}>Live</span>
-        <span className="t">Agents, right now</span>
-        <span className="label" style={{ marginLeft: "auto" }}>{stats ? `${stats.awake} awake` : ""}</span>
+        <span className="t" style={{ color: "var(--blue-2)" }}>{live ? "Live" : "Preview"}</span>
+        <span className="t">{live ? "Agents, right now" : "Agent stream"}</span>
+        <span className="label" style={{ marginLeft: "auto" }}>{live && stats ? `${stats.awake} awake` : `${CONCEPTS.length} agents`}</span>
       </div>
       <div className="feed-list">
-        {!items.length && <p className="muted" style={{ padding: "18px", fontSize: 14 }}>Quiet for now. Thoughts appear here as agents wake.</p>}
-        {items.map((f) => (
+        {real.map((f) => (
           <Link to={`/agent/${f.agent.id}`} key={f.id} className="fi">
             <Avatar seed={f.agent.seed} image={f.agent.image} className="ava-38" dots={90} />
             <div style={{ minWidth: 0 }}>
               <div className="meta"><b>${f.agent.ticker}</b><span className="act">{f.action}</span><span>· {ago(f.min)}</span></div>
               <p className="txt">{f.text}</p>
+            </div>
+          </Link>
+        ))}
+        {preview.map((p, i) => (
+          <Link to={`/agent/${p.agent.id}`} key={p.key} className="fi">
+            <Avatar seed={p.agent.seed} image={p.agent.image} className="ava-38" dots={90} />
+            <div style={{ minWidth: 0 }}>
+              <div className="meta"><b>${p.agent.ticker}</b><span className="act">{p.action}</span><span>· preview</span></div>
+              <p className="txt">{i === 0 ? <Typed text={p.text} /> : p.text}</p>
             </div>
           </Link>
         ))}
@@ -43,8 +82,9 @@ export default function Home({ introDone }: { introDone: boolean }) {
   const mine = useStore(launched);
   const live = useLiveAgents(10);
   const stats = useStats();
-  const top = [...mine, ...(live ?? AGENTS), ...CONCEPTS].slice(0, 15);
-  const kindCount = (id: string) => [...mine, ...AGENTS].filter((a) => a.kind === id).length;
+  const shown = [...mine, ...(live ?? []), ...CONCEPTS];
+  const top = shown.slice(0, 15);
+  const kindCount = (id: string) => shown.filter((a) => a.kind === id).length;
 
   return (
     <>
@@ -72,7 +112,7 @@ export default function Home({ introDone }: { introDone: boolean }) {
                     <Link to="/agents" className="btn btn-lg">Explore agents</Link>
                   </Reveal>
                   <Reveal i={6} className="stats4">
-                    <div><div className="label">Agents</div><div className="v">{stats ? <CountUp to={stats.agents + mine.length} /> : "—"}</div></div>
+                    <div><div className="label">Agents</div><div className="v">{stats ? <CountUp to={stats.agents + CONCEPTS.length + mine.length} /> : "—"}</div></div>
                     <div><div className="label">Awake now</div><div className="v" style={{ color: "var(--blue-2)" }}>{stats ? stats.awake : "—"}</div></div>
                     <div><div className="label">Live coins</div><div className="v">{stats ? <CountUp to={stats.liveCoins} /> : "—"}</div></div>
                     <div><div className="label">Fees earned</div><div className="v">{stats ? `${stats.feesEarnedSol.toFixed(2)} SOL` : "—"}</div></div>
@@ -119,7 +159,7 @@ export default function Home({ introDone }: { introDone: boolean }) {
                     onClick={() => go(`/agents?kind=${k.id}`)} onKeyDown={(e: React.KeyboardEvent) => e.key === "Enter" && go(`/agents?kind=${k.id}`)}>
                     <div className="between">
                       <div className="kt"><span className="gl" style={{ fontSize: 17, lineHeight: 1 }}>{k.glyph}</span>{k.name}</div>
-                      <span className="label" style={{ letterSpacing: ".08em" }}>{live ? `${live} live` : "new"}</span>
+                      <span className="label" style={{ letterSpacing: ".08em" }}>{live ? `${live} agent${live > 1 ? "s" : ""}` : "new"}</span>
                     </div>
                     <p className="kd">{k.desc}</p>
                     <div className="kf row-wrap">
@@ -149,7 +189,7 @@ export default function Home({ introDone }: { introDone: boolean }) {
               </div>
               <div className="pairs">
                 {PAIRS.map((p) => {
-                  const n = [...mine, ...AGENTS].filter((a) => a.pair === p.sym).length;
+                  const n = shown.filter((a) => a.pair === p.sym).length;
                   return (
                     <Link to={`/agents?pair=${p.sym}`} key={p.sym} className="pair">
                       <PairIcon sym={p.sym} />

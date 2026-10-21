@@ -18,7 +18,7 @@ export async function runDueWakes(): Promise<void> {
     `UPDATE agents SET next_wake_at = now() + make_interval(mins => $2)
       WHERE id IN (
         SELECT id FROM agents
-         WHERE status = 'awake' AND NOT paused_by_dev
+         WHERE status = 'awake' AND NOT paused_by_dev AND mint IS NOT NULL
            AND next_wake_at IS NOT NULL AND next_wake_at <= now()
          ORDER BY next_wake_at ASC LIMIT $1
          FOR UPDATE SKIP LOCKED
@@ -44,7 +44,7 @@ export async function runFirstWakes(): Promise<void> {
     `UPDATE agents SET next_wake_at = now() + make_interval(mins => $1)
       WHERE id IN (
         SELECT id FROM agents
-         WHERE status = 'awake' AND wake_count = 0 AND NOT paused_by_dev
+         WHERE status = 'awake' AND wake_count = 0 AND NOT paused_by_dev AND mint IS NOT NULL
          ORDER BY created_at LIMIT 2 FOR UPDATE SKIP LOCKED
       ) RETURNING id`,
     [config.WAKE_INTERVAL_MIN],
