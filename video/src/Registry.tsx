@@ -11,7 +11,6 @@ const COLS = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 const ROWS = [-3, -2, -1, 0, 1, 2, 3];
 
 const AGENTS = [
-  "clerk", "halc", "saint", "moth", "static", "fndry", "rook", "fox", "tide", "monk",
   "abacus", "lantrn", "choir", "glass", "salt", "herald", "vellum", "kettle", "orchrd", "pale", "abbot", "mintc",
 ];
 
@@ -19,12 +18,12 @@ const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const io = Easing.bezier(0.65, 0, 0.35, 1);
 const out = Easing.bezier(0.16, 1, 0.3, 1);
 
-// every cell except the centre, in a fixed shuffled order; the first 22 get agents
-const CELLS = COLS.slice(1, -1).flatMap((c) => ROWS.slice(1, -1).map((r) => ({ c, r })))
+// the 14 cells around the centre, in a fixed shuffled order; the first 12 get agents
+const CELLS = [-2, -1, 0, 1, 2].flatMap((c) => [-1, 0, 1].map((r) => ({ c, r })))
   .filter(({ c, r }) => c !== 0 || r !== 0)
   .sort((a, b) => random(`cell${a.c},${a.r}`) - random(`cell${b.c},${b.r}`))
   .slice(0, AGENTS.length)
-  .map((cell, i) => ({ ...cell, id: AGENTS[i], on: 40 + i * 5.5 }));
+  .map((cell, i) => ({ ...cell, id: AGENTS[i], on: 40 + i * 9 }));
 
 /** Camera zoom around the frame centre: 1 → 7 into the centre cell, then back out. */
 const zoomAt = (f: number) =>
