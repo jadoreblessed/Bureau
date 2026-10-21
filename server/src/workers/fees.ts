@@ -28,9 +28,11 @@ export async function claimFees(): Promise<void> {
 
       const res = await sweepAndDistribute({ mint: agent.mint, graduated: agent.graduated });
       if (!res.distributed) continue;
+      // book what the chain says moved, not what the vault seemed to hold
+      const gross = res.movedLamports;
 
       const signature = res.signatures.at(-1);
-      const [toAgent, toPlatform, toCredits, toBurn] = splitByBps(pending, [
+      const [toAgent, toPlatform, toCredits, toBurn] = splitByBps(gross, [
         config.SHARE_AGENT_BPS, config.SHARE_PLATFORM_BPS, config.SHARE_CREDITS_BPS, config.SHARE_BUYBACK_BPS,
       ]);
 
@@ -38,11 +40,11 @@ export async function claimFees(): Promise<void> {
         `INSERT INTO ledger (agent_id, entry, amount_lamports, signature, meta)
          VALUES ($1,'fee_claim',$2,$3,$4)
          ON CONFLICT (signature, entry) WHERE signature IS NOT NULL DO NOTHING`,
-        [agent.id, toAgent, signature ?? null, JSON.stringify({ gross: pending, toPlatform, toCredits, toBurn })],
+        [agent.id, toAgent, signature ?? null, JSON.stringify({ gross, toPlatform, toCredits, toBurn })],
       );
       await query(`UPDATE agents SET fees_earned_lamports = fees_earned_lamports + $2 WHERE id = $1`, [agent.id, toAgent]);
 
-      log.info({ agentId: agent.id, gross: pending, toAgent, signature }, "creator fees distributed");
+      log.info({ agentId: agent.id, gross, toAgent, signature }, "creator fees distributed");
       await maybeWake(agent.id);
     } catch (err) {
       log.warn({ err, agentId: agent.id }, "fee claim failed");

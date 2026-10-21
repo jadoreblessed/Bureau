@@ -317,12 +317,16 @@ export function sharesMatch(onChain: Shareholder[], expected: Shareholder[]): bo
 /**
  * Pays out everything the coin has earned. Both calls are permissionless, so
  * the platform payer can run them on a schedule for every coin.
+ *
+ * Pump only distributes once the vault holds its minimum (and otherwise logs
+ * "Insufficient fees" but still succeeds), so this asks first and then reports
+ * what actually left the vault, measured on chain — never what we expected.
  */
 export async function sweepAndDistribute(opts: {
   mint: string;
   quoteMint?: string;
   graduated: boolean;
-}): Promise<{ signatures: string[]; distributed: boolean }> {
+}): Promise<{ signatures: string[]; distributed: boolean; movedLamports: number }> {
   const mint = pk(opts.mint);
   const quoteMint = pk(opts.quoteMint ?? WSOL_MINT);
   const signatures: string[] = [];
@@ -344,8 +348,15 @@ export async function sweepAndDistribute(opts: {
 
   const address = sharingConfigPda(mint);
   const cfg = await fetchSharingConfig(address).catch(() => null);
-  if (!cfg) return { signatures, distributed: false };
+  if (!cfg) return { signatures, distributed: false, movedLamports: 0 };
 
+  const check = await online.getMinimumDistributableFee(mint, payer.publicKey).catch((err) => {
+    log.debug({ err, mint: opts.mint }, "minimum distributable fee check failed");
+    return null;
+  });
+  if (!check?.canDistribute) return { signatures, distributed: false, movedLamports: 0 };
+
+  const before = await pendingCreatorFees(opts.mint);
   const ix = await sdk.distributeCreatorFeesV2({
     mint,
     sharingConfig: cfg,
@@ -356,7 +367,9 @@ export async function sweepAndDistribute(opts: {
     quoteTokenProgram: TOKEN_PROGRAM_ID,
   });
   signatures.push(await sendIxs([ix], [], "distribute_creator_fees_v2"));
-  return { signatures, distributed: true };
+  const movedLamports = Math.max(0, before - (await pendingCreatorFees(opts.mint)));
+  if (!movedLamports) log.warn({ mint: opts.mint, signature: signatures.at(-1) }, "distribution confirmed but nothing left the vault");
+  return { signatures, distributed: movedLamports > 0, movedLamports };
 }
 
 /** Unclaimed creator fees sitting in the vault, in lamports. */
