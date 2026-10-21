@@ -85,9 +85,9 @@ export async function agentRoutes(app: FastifyInstance) {
   app.get("/meta/:file", async (req, reply) => {
     try {
       const slug = (req.params as { file: string }).file.replace(/\.json$/, "");
-      const a = await one<{ name: string; ticker: string; description: string; image_url: string | null; links: { x?: string; telegram?: string } }>(
+      const a = await one<{ slug: string; name: string; ticker: string; description: string; image_url: string | null; links: { x?: string; telegram?: string } }>(
         // the URI on chain keeps the slug the coin launched with, even if the slug changes later
-        `SELECT name, ticker, description, image_url, links FROM agents
+        `SELECT slug, name, ticker, description, image_url, links FROM agents
           WHERE slug = $1 OR metadata_uri LIKE '%/api/meta/' || $1 || '.json' LIMIT 1`,
         [slug],
       );
@@ -100,7 +100,7 @@ export async function agentRoutes(app: FastifyInstance) {
         image: a.image_url ?? "",
         showName: true,
         createdOn: site,
-        website: `${site}/#/agent/${slug}`,
+        website: `${site}/#/agent/${a.slug}`,
         ...(a.links?.x ? { twitter: a.links.x } : {}),
         ...(a.links?.telegram ? { telegram: a.links.telegram } : {}),
       };

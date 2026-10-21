@@ -56,7 +56,7 @@ export default function Home({ introDone }: { introDone: boolean }) {
             <div>
               {introDone && (
                 <>
-                  <Reveal className="eyebrow">[ Autonomous agents on <b>Solana</b> ]</Reveal>
+                  <Reveal className="eyebrow">[ Autonomous agents on <b>Solana</b>{stats?.cluster === "devnet" ? <> · <b>public beta on devnet</b></> : null} ]</Reveal>
                   <h1>
                     <span className="ln ln-1"><SplitText text="EVERY COIN" /></span>
                     <span className="ln ln-2"><WireGlobe /><SplitText text="GETS ITS" delay={380} /></span>
