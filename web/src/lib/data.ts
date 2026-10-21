@@ -254,11 +254,11 @@ export const AGENTS: Agent[] = HOUSE.map(fromHouse);
 import { ROSTER, type ConceptRow } from "./roster";
 /** Concept previews: listed after the real agents, labelled "Preview", with no coin and no figures. */
 function fromConcept(r: ConceptRow, i: number): Agent {
-  const a = fromHouse({ ...r, state: "", image: r.image ?? "" }, 100 + i);
+  const a = fromHouse({ ...r, state: "", image: "" }, 100 + i);
   const rnd = rng(a.seed);
   const mcap = Math.round(9_000 * Math.pow(50, rnd()));
   return {
-    ...a, status: "preview", image: r.image, concept: true, lines: r.lines, demoPosts: r.posts,
+    ...a, status: "preview", image: r.image ?? `/agents/${a.id}.webp`, concept: true, lines: r.lines, demoPosts: r.posts,
     persona: { ...a.persona, traits: r.traits },
     mcap, fees: Math.round(mcap * (0.02 + rnd() * 0.07)), vol1h: Math.round(mcap * (0.01 + rnd() * 0.14)),
     holders: Math.round(40 + Math.sqrt(mcap) * (2 + rnd() * 4)), ageDays: 2 + Math.floor(rnd() * 38), ageLabel: undefined,

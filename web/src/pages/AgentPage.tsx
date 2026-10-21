@@ -138,6 +138,7 @@ function AgentView({ a, d }: { a: Agent; d: AgentDetail | null }) {
                 <button className="ca-btn" onClick={() => copy(a.ca, "Contract address copied")} title={a.ca}>
                   <span className="ca-k">CA</span><span className="ca-v">{short(a.ca, 6, 6)}</span><span className="ca-c"><Copy className="ic" /></span>
                 </button>
+                {a.concept && <button type="button" className="btn btn-sm btn-blue" disabled aria-disabled="true" title="Preview: trading opens once this agent launches" style={{ opacity: .45, cursor: "not-allowed" }}>Trade</button>}
                 {!a.concept && cluster !== "devnet" && <a className="btn btn-sm btn-blue" href={`https://pump.fun/coin/${a.ca}`} target="_blank" rel="noreferrer">Trade</a>}
                 {!a.concept && <a className="btn btn-sm" href={explorer(cluster, "token", a.ca)} target="_blank" rel="noreferrer">Solscan</a>}
               </>

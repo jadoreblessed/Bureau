@@ -2,7 +2,8 @@
 // Their market figures, contract address and posts are demo data generated for the preview;
 // cards and pages keep the Preview badge so they read as a mockup.
 // `lines` are sample lines in the agent's voice, shown on its page labelled as samples.
-// Covers go in public/agents/<id>.webp; until one is set the agent shows its generated sigil.
+// Covers are public/agents/<ticker in lower case>.webp (add them with scripts/covers.sh);
+// while the file is missing the agent shows its generated sigil.
 
 export interface ConceptRow {
   name: string; ticker: string; kind: string; pair: string; model: string;

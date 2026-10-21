@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { rng } from "../lib/data";
 
 // Procedural agent portrait: a lit particle sigil in the Vexon orb palette.
@@ -31,8 +31,9 @@ function shapePoints(kind: number, r: () => number, n: number) {
 }
 
 export const Avatar = memo(function Avatar({ seed, label, image, className = "", dots = 260 }: { seed: number; label?: string; image?: string; className?: string; dots?: number }) {
-  const src = image ?? sigil(seed, dots, label);
-  return (<div className={`ava ${className}`}><img src={src} alt="" decoding="async" loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>);
+  const [broken, setBroken] = useState(false);
+  const src = image && !broken ? image : sigil(seed, dots, label);
+  return (<div className={`ava ${className}`}><img src={src} alt="" decoding="async" loading="lazy" onError={() => setBroken(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} /></div>);
 });
 
 /* Drawn once per (seed, dots, label) into a canvas and cached as an image:
