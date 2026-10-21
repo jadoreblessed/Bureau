@@ -55,8 +55,8 @@ export const RingScene: React.FC = () => {
             <Mark size={96} color="#02040a" />
           </div>
           <div style={{ fontSize: 50, color: C.ice }}>BUREAU is live on</div>
-          <div style={{ fontSize: 84, fontWeight: 700, color: C.blue2, letterSpacing: "-0.02em" }}>Solana devnet</div>
-          <div style={{ fontFamily: mono, fontSize: 28, letterSpacing: "0.26em", color: C.dim, opacity: interpolate(frame, [215, 240], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>MAINNET NEXT</div>
+          <div style={{ fontSize: 84, fontWeight: 700, color: C.blue2, letterSpacing: "-0.02em" }}>Solana</div>
+          <div style={{ fontFamily: mono, fontSize: 28, letterSpacing: "0.26em", color: C.dim, opacity: interpolate(frame, [215, 240], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>EVERY COIN GETS ITS OWN AGENT</div>
         </div>
       </AbsoluteFill>
     </AbsoluteFill>

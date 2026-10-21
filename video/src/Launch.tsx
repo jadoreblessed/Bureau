@@ -4,7 +4,7 @@ import { EndCard } from "./EndCard";
 import { RingScene } from "./RingScene";
 import { WordsScene } from "./WordsScene";
 
-// Launch announcement: ring of agents → "live on devnet" → four beats → logo.
+// Launch announcement: ring of agents → "live on Solana" → four beats → logo.
 export const Launch: React.FC = () => (
   <TransitionSeries>
     <TransitionSeries.Sequence name="Ring" durationInFrames={300}>
