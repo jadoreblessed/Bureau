@@ -7,7 +7,7 @@ import {
 import { drafts, toast, useStore } from "../lib/store";
 import { apiSignIn, sendSol, useWallet } from "../lib/wallet";
 import { Avatar } from "../components/Avatar";
-import { Check, Phantom, ProviderIcon, Shield, Upload } from "../components/icons";
+import { Check, ProviderIcon, Shield, Upload } from "../components/icons";
 import { PairIcon, Reveal } from "../components/ui";
 
 const STEPS = ["Identity", "Mind", "Pair", "Kind", "Character", "Influencer", "Powers", "Programs", "Links", "Sign"];
@@ -329,7 +329,7 @@ export default function Launch() {
             <div className="row mt-16" style={{ fontSize: 13, color: "var(--warn)" }}><Shield className="icon" />The agent can make bad decisions and lose money.</div>
             <div className="row-wrap mt-20" style={{ gap: 10 }}>
               <button className="btn btn-solid btn-lg" onClick={launch} disabled={busy}>
-                {busy ? "Launching…" : w.address ? <>Launch ${f.ticker || "TICKER"}</> : <><Phantom className="ic" />Connect &amp; launch</>}
+                {busy ? "Launching…" : w.address ? <>Launch ${f.ticker || "TICKER"}</> : "Connect & launch"}
               </button>
               <button className="btn btn-lg" onClick={saveDraft}>Save draft</button>
             </div>

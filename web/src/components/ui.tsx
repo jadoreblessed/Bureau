@@ -6,7 +6,7 @@ import { phantomDeepLink, pickWallet, useWallet } from "../lib/wallet";
 import {
   type Agent, STATUS_LABEL, fmtUsd, kindById, modelByName, pairBySym, short, statusClass,
 } from "../lib/data";
-import { Check, Copy, Logout, Mark, Phantom, ProviderIcon } from "./icons";
+import { Check, Copy, Logout, Mark, ProviderIcon } from "./icons";
 import { Avatar } from "./Avatar";
 
 /* ------------------------------------------------------------ reveal */
@@ -168,14 +168,13 @@ export function WalletButton({ block = false, size = "sm" }: { block?: boolean; 
     const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     return (
       <a className={`${cls} btn-blue wallet-btn`} href={mobile ? phantomDeepLink() : "https://phantom.app/download"} target="_blank" rel="noreferrer">
-        <Phantom className="ic" />Connect Wallet
+        Connect Wallet
       </a>
     );
   }
   if (!w.address)
     return (
       <button type="button" className={`${cls} btn-blue wallet-btn`} onClick={() => w.connect()} disabled={w.connecting}>
-        <Phantom className="ic" />
         {w.connecting ? "Connecting…" : "Connect Wallet"}
       </button>
     );
